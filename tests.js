@@ -198,6 +198,13 @@ imgcheck(arbpat1, 'pat("a").and(arb, "z")')
 check(arbpat1.amatch('abcedfghijklmnopqrstuvwxyz', deb),
       'abcedfghijklmnopqrstuvwxyz');
 
+const arbpat2 = arb.and('z');
+imgcheck(arbpat2, 'arb.and("z")')
+check(arbpat2.amatch('z', deb), 'z')
+check(arbpat2.amatch('az', deb), 'az')
+check(arbpat2.amatch('abcz', deb), 'abcz')
+checkval(arbpat2.amatch('abc', deb), null)
+
 // arbno
 const arbnpat1 = arbno('z').and('y');
 imgcheck(arbnpat1, 'arbno("z").and("y")')
