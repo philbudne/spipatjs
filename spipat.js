@@ -2577,7 +2577,7 @@ let MODULE_EXPORTS = [
 // nodejs
 if (typeof exports !== 'undefined') {
     for (let sym of MODULE_EXPORTS)
-	exports[sym] = eval(sym);
+	exports[sym] = eval(sym); // UGH!
 }
 
 //console.log(STRING_LENGTHS);
