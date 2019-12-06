@@ -129,15 +129,15 @@ function need_ssf(func) {
 }
 
 // from "ssf" matching functions
-function need_sf(who, func) {
-    throw new SpipatUserError(`'${who}' needs String or Set from ${func}`);
+function need_sf(who, got, func) {
+    throw new SpipatUserError(`'${who}' needs String or Set, got ${got} from ${func}`);
 }
-    
+
 function need_nnif(func, n) {
     throw new SpipatUserError(`'${func}' needs non-negative integer or Function, got ${n}`);
 }
 
-function need_nnif(who, func, n) {
+function need_nni(who, n, func) {
     throw new SpipatUserError(`'${func}' needs non-negative integer from function ${func} got ${n}`);
 }
 
@@ -189,7 +189,6 @@ class _PE {			// Pattern Element
     }
 
     match(m) {
-	console.trace();
 	throw this.name() + " match not defined!";
     }
 
@@ -532,6 +531,7 @@ class PE_Func extends FuncPE {
 	    return M_Match;
 	}
 	else if (is_bool(x)) {
+	    m.petrace(this, `function ${this.func} returned ${x}`);
 	    if (x)
 		return M_Succeed;
 	    else
@@ -548,7 +548,7 @@ class PE_Func extends FuncPE {
 }
 
 // string or function to PE
-function sf_to_pe(x) {
+function sf_to_pe(who, x) {
     if (is_str(x)) {
 	let runes = explode(x);
 // gather stats:
@@ -571,7 +571,7 @@ function sf_to_pe(x) {
 	return new PE_Func(x);
     }
     else {
-	uerror("need String or Function");
+	uerror(`'${who}' needs String or Function`);
     }
 }
 
@@ -579,7 +579,7 @@ function sf_to_pe(x) {
 // and construct new patterns thru a Pattern subclass constructor.
 // But this requires fewer keystrokes:
 /*export*/ function pat(x) { // string or function to Pattern
-    return new Pattern(0, sf_to_pe(x));
+    return new Pattern(0, sf_to_pe('pat', x));
 }
 
 ////////////////
@@ -1112,7 +1112,7 @@ class Pattern {		// primative pattern
 	    let r = arguments[i];
 	    if (is_str(r) || is_func(r)) {
 		// XXX handle function returning pattern??
-		lp = pe_conc(lp.copy(), sf_to_pe(r), 0);
+		lp = pe_conc(lp.copy(), sf_to_pe('and', r), 0);
 		// no chnge to lstk
 	    }
 	    else if (is_pat(r)) {
@@ -1134,7 +1134,7 @@ class Pattern {		// primative pattern
 	    if (is_str(r) || is_func(r)) {
 		// XXX handle function returning pattern??
 		lstk++;
-		lp = pe_alt(lp.copy(), sf_to_pe(r));
+		lp = pe_alt(lp.copy(), sf_to_pe('or', r));
 	    }
 	    else if (is_pat(r)) {
 		lstk = Math.max(lstk, r.stk) + 1;
@@ -1278,7 +1278,7 @@ class Stack_Entry {
 	uerror("'cset' needs String");
 
     let arr = explode(str);
-    // XXX special case (to class w/ "has") if only one character?
+    // XXX special case (to class w/ "has") if only one (or two) character(s)?
     return new Set(arr);
 }
 
@@ -1392,7 +1392,7 @@ class PE_Any_Set extends SetPE {
     }
 
     match(m) {
-	// XXX need trace matching...
+	m.petrace(this, "matching any");
 	if (m.cursor < m.length && this.set.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	    return M_Succeed;
@@ -1412,11 +1412,12 @@ class PE_Any_Func extends FuncPE {
     }
 
     match(m) {
+	m.petrace(this, "matching any (func)");
 	let set = this.func();
 	if (is_str(set))
 	    set = cset(set)
 	else if (!is_set(set))
-	    need_ssf('any', this.func);
+	    need_sf('any', set, this.func);
 
 	if (m.cursor < m.length && set.has(m.subject[m.cursor])) {
 	    m.cursor++;
@@ -1726,7 +1727,7 @@ function bracket(e, p, a) {
     let pe;
     let patstk;
     if (is_str(p)) {
-	pe = sf_to_pe(p);
+	pe = sf_to_pe('arbno', p);
 	patstk = 0;
     }
     else if (is_pat(p)) {
@@ -1855,6 +1856,7 @@ class PE_Bal extends PE {	//  Bal
 
 class PE_Break_Set extends SetPE {
     match(m) {
+	m.petrace(this, "matching break");
 	while (m.cursor < m.length && !this.set.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	}
@@ -1868,11 +1870,12 @@ class PE_Break_Set extends SetPE {
 
 class PE_Break_Func extends FuncPE {
     match(m) {
+	m.petrace(this, "matching break (func)");
 	let set = this.func();
 	if (is_str(set))
-	    set = set(set)
+	    set = cset(set)
 	else if (!is_set(set))
-	    need_sf('break', this.func);
+	    need_sf('break', set, this.func);
 
 	// XXX missing trace("matching....")
 	while (m.cursor < m.length && !set.has(m.subject[m.cursor])) {
@@ -1929,7 +1932,7 @@ class PE_BreakX_Func extends FuncPE { //  breakx (function case)
 	else if (is_set(set))
 	    m.petrace(this, `matching breakx ${LQ}${set}${RQ}`); // XXX set2string
 	else
-	    need_sf('breakx', this.func);
+	    need_sf('breakx', set, this.func);
 
 	while (m.cursor < m.length) {
 	    if (set.has(subject[m.cursor]))
@@ -1990,7 +1993,7 @@ class PE_BreakX_X extends PE {
 
 class PE_Cursor extends FuncPE {    //  Cursor assignment
     match(m) {
-	m.petrace(this, `calling ${this.func}`);
+	m.petrace(this, `calling ${this.func} with cursor`);
 	this.func(m.cursor);
 	return M_Succeed;
     }
@@ -2136,8 +2139,8 @@ class PE_Len extends UnsealedPE { // len (integer case)
 class PC_Len_Func extends FuncPE { // len (function case)
     match(m) {
 	let len = this.func();
-	if (!is_int(len))
-	    uerror(`'len' needs int from ${this.func}`);
+	if (!is_int(len) || len < 0)
+	    need_nni('len', len, this.func);
 	m.petrace(this, `matching len ${len}`);
 	if (m.cursor + len > m.length)
 	    return M_Fail;
@@ -2176,6 +2179,7 @@ class PE_NotAny_Set extends SetPE {
     }
 
     match(m) {
+	m.petrace(this, "matching notany");
 	if (m.cursor < m.length && !this.set.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	    return M_Succeed;
@@ -2197,10 +2201,11 @@ class PE_NotAny_Func extends FuncPE {
     match(m) {
 	let set = this.func();
 	if (is_str(set))
-	    set = set(set)
+	    set = cset(set)
 	else if (!is_set(set))
-	    uerror(`notany needs set or string from function ${this.func}`);
+	    need_sf('notany', set, this.func);
 
+	m.petrace(this, "matching notany (func)");
 	if (m.cursor < m.length && !set.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	    return M_Succeed;
@@ -2229,6 +2234,7 @@ class PE_NotAny_Func extends FuncPE {
 
 class PE_NSpan_Set extends SetPE {
     match(m) {
+	m.petrace(this, "matching nspan");
 	while (m.cursor < m.length && this.set.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	}
@@ -2242,11 +2248,12 @@ class PE_NSpan_Set extends SetPE {
 
 class PE_NSpan_Func extends FuncPE {
     match(m) {
+	m.petrace(this, "matching nspan (func)");
 	let set = this.func();
 	if (is_str(set))
-	    set = set(set)
+	    set = cset(set)
 	else if (!is_set(set))
-	    uerror(`nspan needs set or string from function ${this.func}`);
+	    need_sf('nspan', set, this.func);
 
 	while (m.cursor < m.length && set.has(m.subject[m.cursor])) {
 	    m.cursor++;
@@ -2290,7 +2297,7 @@ class PE_Pos_Func extends FuncPE { // pos(func)
 	let n = this.func();
 	if (n < 0)
 	    uerror(`rpos function ${this.func} returned ${n}`);
-	m.petrace(this, `matching rpos ${this.n}`);
+	m.petrace(this, `matching rpos (func) ${this.n}`);
 	if (m.cursor === n)
 	    return M_Succeed;
 	return M_Fail;
@@ -2329,7 +2336,7 @@ class PE_RPos_Func extends FuncPE { // pos(func)
 	let n = this.func();
 	if (n < 0)
 	    uerror(`pos function ${this.func} returned ${n}`);
-	m.petrace(this, `matching pos ${this.n}`);
+	m.petrace(this, `matching pos (func) ${this.n}`);
 	if (m.cursor === m.length - n)
 	    return M_Succeed;
 	return M_Fail;
@@ -2369,8 +2376,8 @@ class PE_RTab_Func extends FuncPE { // rtab(func)
     match(m) {
 	let n = this.func();
 	if (n < 0)
-	    uerror(`rtab function ${this.func} returned ${n}`); // need_???
-	m.petrace(this, `matching rtab ${this.n}`);
+	    need_nni('rtab', n, this.func);
+	m.petrace(this, `matching rtab (func) ${this.n}`);
 	if (m.cursor <= m.length - n) {
 	    m.cursor = m.length - n;
 	    return M_Succeed;
@@ -2416,6 +2423,7 @@ class PE_Span_Set extends SetPE {
 
     match(m) {
 	let c = m.cursor;
+	m.petrace(this, "matching span");
 	while (c < m.length && this.set.has(m.subject[c]))
 	    c++;
 	if (m.cursor !== c) {
@@ -2439,11 +2447,12 @@ class PE_Span_Func extends FuncPE {
     match(m) {
 	let set = this.func();
 	if (is_str(set))
-	    set = set(val)
+	    set = cset(val)
 	else if (!is_set(set))
-	    uerror(`span needs set or string from function ${this.func}`);
+	    need_sf('nspan', set, this.func);
 
 	let c = m.cursor;
+	m.petrace(this, "matching span (func)");
 	while (c < m.length && set.has(m.subject[c]))
 	    c++;
 	if (m.cursor !== c) {	// non-empty match?
@@ -2507,8 +2516,8 @@ class PE_Tab_Func extends FuncPE { // tab(func)
     match(m) {
 	let n = this.func();
 	if (n < 0)
-	    uerror(`tab function ${this.func} returned ${n}`); // need_???
-	m.petrace(this, `matching tab ${this.n}`);
+	    need_nni('tab', n, this.func);
+	m.petrace(this, `matching tab (func) ${this.n}`);
 	if (m.cursor <= n) {
 	    m.cursor = n;
 	    return M_Succeed;
