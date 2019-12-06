@@ -1492,7 +1492,7 @@ class PE_Arb_Y extends UnsealedPE {	// arb (extension)
     }
 }
 
-/*export */ const arb = new Pattern(1,
+/*export*/ const arb = new Pattern(1,
 				    new PE_Arb_X(2, EOP,
 						 new PE_Arb_Y()));
 
@@ -2094,7 +2094,7 @@ class PE_Fence_Y extends PE {
 // the X node is numbered N + 1,
 // and the E node is N + 2.
 
-/*export*/function fencef(pat) {
+/*export*/ function fencef(pat) {
     const e = new PE_R_Enter();
     const p = pat.p.copy();
     const x = new PE_Fence_X();
