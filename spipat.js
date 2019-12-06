@@ -2542,9 +2542,6 @@ class PE_Tab_Func extends FuncPE { // tab(func)
 
 // nodejs
 if (typeof exports !== 'undefined') {
-    exports.rem = rem;
-    exports.pat = pat;
-    exports.cset = cset;
     exports.abort = abort;
     exports.any = any;
     exports.arb = arb;
@@ -2552,20 +2549,26 @@ if (typeof exports !== 'undefined') {
     exports.bal = bal;
     exports.breakp = breakp;
     exports.breakx = breakx;
+    exports.cset = cset;
     exports.cursor = cursor;
     exports.fail = fail;
     exports.fence = fence;
     exports.fencef = fencef;
     exports.len = len;
     exports.notany = notany;
-    exports.succeed = succeed;
     exports.notany = notany;
     exports.nspan = nspan;
+    exports.pat = pat;
     exports.pos = pos;
+    exports.rem = rem;
     exports.rpos = rpos;
     exports.rtab = rtab;
     exports.span = span;
+    exports.succeed = succeed;
     exports.tab = tab;
+
+    // for ests
+    exports.get_caller = get_caller;
 }
 
 //console.log(STRING_LENGTHS);
