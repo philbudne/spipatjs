@@ -2567,40 +2567,17 @@ let MODULE_EXPORTS = [
     'tab',
 
     // for tests
-    'get_caller'
+    'get_caller',
+    'print_nodes',
+    'print_dot',
+    'LQ',
+    'RQ'
 ];
 
 // nodejs
 if (typeof exports !== 'undefined') {
-    exports.abort = abort;
-    exports.any = any;
-    exports.arb = arb;
-    exports.arbno = arbno;
-    exports.bal = bal;
-    exports.breakp = breakp;
-    exports.breakx = breakx;
-    exports.cset = cset;
-    exports.cursor = cursor;
-    exports.fail = fail;
-    exports.fence = fence;
-    exports.fencef = fencef;
-    exports.len = len;
-    exports.notany = notany;
-    exports.notany = notany;
-    exports.nspan = nspan;
-    exports.pat = pat;
-    exports.pos = pos;
-    exports.rem = rem;
-    exports.rpos = rpos;
-    exports.rtab = rtab;
-    exports.span = span;
-    exports.succeed = succeed;
-    exports.tab = tab;
-
-    // for tests
-    exports.get_caller = get_caller;
-    exports.LQ = LQ;
-    exports.RQ = RQ;
+    for (let sym of MODULE_EXPORTS)
+	exports[sym] = eval(sym);
 }
 
 //console.log(STRING_LENGTHS);
