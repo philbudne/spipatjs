@@ -2540,6 +2540,36 @@ class PE_Tab_Func extends FuncPE { // tab(func)
 
 ////////////////////////////////////////////////////////////////
 
+let MODULE_EXPORTS = [
+    'abort',
+    'any',
+    'arb',
+    'arbno',
+    'bal',
+    'breakp',
+    'breakx',
+    'cset',
+    'cursor',
+    'fail',
+    'fence',
+    'fencef',
+    'len',
+    'notany',
+    'notany',
+    'nspan',
+    'pat',
+    'pos',
+    'rem',
+    'rpos',
+    'rtab',
+    'span',
+    'succeed',
+    'tab',
+
+    // for tests
+    'get_caller'
+];
+
 // nodejs
 if (typeof exports !== 'undefined') {
     exports.abort = abort;
@@ -2567,7 +2597,7 @@ if (typeof exports !== 'undefined') {
     exports.succeed = succeed;
     exports.tab = tab;
 
-    // for ests
+    // for tests
     exports.get_caller = get_caller;
 }
 
