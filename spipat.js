@@ -2026,7 +2026,7 @@ class PE_Fail extends UnsealedPE {	//  Fail
 
 //////////////// fence (pattern)
 
-class PC_Fence extends UnsealedPE {	//  fence (built in pattern)
+class PE_Fence extends UnsealedPE { // fence (built in pattern)
     constructor() {
     	super(1, EOP);
 	this.seal();
@@ -2043,7 +2043,9 @@ class PC_Fence extends UnsealedPE {	//  fence (built in pattern)
     }
 }
 
-//////////////// fence (function)
+/*export*/const fence = new Pattern(1, new PE_Fence());
+
+//////////////// fencef (function)
 
 // Fence function node X. This is the node that gets control
 // after a successful match of the fenced pattern.
@@ -2078,6 +2080,22 @@ class PE_Fence_Y extends PE {
 	m.stack.ptr = m.cursor - 2; // XXX check! HIDE?
 	return M_Fail;
     }
+}
+
+//    +---+     +---+     +---+
+//    | E |---->| P |---->| X |---->
+//    +---+     +---+     +---+
+
+// The node numbering of the constituent pattern P is not affected.
+// Where N is the number of nodes in P,
+// the X node is numbered N + 1,
+// and the E node is N + 2.
+
+/*export*/function fencef(pat) {
+    const e = new PE_R_Enter();
+    const p = pat.p.copy();
+    const x = new PE_Fence_X();
+    return new Pattern(pat.stk + 1, bracket(e, p, x));
 }
 
 //////////////// len
@@ -2876,17 +2894,16 @@ console.log(`${tests} tests: ${ok} ok`);
 
 // figure out node.js/browser compatible module format!
 //    then, split tests out to separate file
-// XXX implement fence function!!
 // XXX test rem, pos
-// XXX test fence, fence function, succeed
+// XXX test fence, fencef function, succeed
 // XXX test backtrack w/ fail, abort, breakx
-// XXX top level and/or functions??
 // XXX test functions as arguments to and/or
 // XXX handle arbno(function)
 // XXX optimize cset for sets with one (or two?) members?
 // XXX all match methods must have trace("matching...")
 // XXX output patterns as SNOBOL4B (blocks) code. grap format??
 // XXX "inext()" should be called successor?
+// top level and/or functions??
 // reuse C++ tests!!!
 // reimplement stack using growable Array (push)
 //	would need to keep as negative values
