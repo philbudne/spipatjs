@@ -212,3 +212,22 @@ of the SUBJECT string to the end of the match.
 
 Returns the SUBJECT String with the matched
 string replaced by the REPL String.
+
+## Recursive Patterns
+
+A Function returning a Pattern can be used to create
+a recursive Pattern:
+
+```
+var P = pat('A').or(pat('B').and(() => P));
+```
+
+On the first attempt, this pattern attempts to match the string "A".
+If this fails, then the alternative matches a "B", followed by an
+attempt to match P again. This second attempt first attempts to
+match "A", and so on. The result is a pattern that will match a
+string of B's followed by a single A.
+
+This particular example could simply be written as nspan('B').and('A')
+but the use of recursive patterns in the general case can construct
+complex patterns which could not otherwise be built.
