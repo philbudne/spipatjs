@@ -77,10 +77,10 @@ characters.
 Where P is any pattern, matches any number of instances
 of the pattern, starting with zero occurrences. It is
 thus equivalent to
-`
+```
 null = pat('')
 null.or(P.and(null.or(P.and(null.or( ....)))))
-`
+```
 
 The pattern P may contain any number of pattern elements
 including the use of alternation and concatenation.
