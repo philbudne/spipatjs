@@ -124,8 +124,8 @@ function uerror(msg) {
     throw new SpipatUserError(msg);
 }
 
-function need_ssf(func) {
-    throw new SpipatUserError(`'${func}' needs String, Set, or Function`);
+function need_ssf(who) {
+    throw new SpipatUserError(`'${who}' needs String, Set, or Function`);
 }
 
 // from "ssf" matching functions
@@ -133,21 +133,12 @@ function need_sf(who, got, func) {
     throw new SpipatUserError(`'${who}' needs String or Set, got ${got} from ${func}`);
 }
 
-function need_nnif(func, n) {
-    throw new SpipatUserError(`'${func}' needs non-negative integer or Function, got ${n}`);
+function need_nnif(who, n) {
+    throw new SpipatUserError(`'${who}' needs non-negative integer or Function, got ${n}`);
 }
 
 function need_nni(who, n, func) {
-    throw new SpipatUserError(`'${func}' needs non-negative integer from function ${func} got ${n}`);
-}
-
-function get_caller(stack, n) {
-    const trace = stack.split("\n");
-    const str = trace[n];
-    
-    // want breakx('(').and('(', break(')').onmatch(....))!!
-    return str.substring(str.lastIndexOf("(") + 1, 
-			 str.lastIndexOf(")"));
+    throw new SpipatUserError(`'${who}' needs non-negative integer from function ${func} got ${n}`);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2567,7 +2558,6 @@ let MODULE_EXPORTS = [
     'tab',
 
     // for tests
-    'get_caller',
     'print_nodes',
     'print_dot',
     'LQ',

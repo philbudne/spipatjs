@@ -11,6 +11,16 @@ let tests = 0;
 let ok = 0;
 let err = 0;
 
+// return n'th entry in an Error().stack output
+function get_caller(stack, n) {
+    const trace = stack.split("\n");
+    const str = trace[n];
+
+    // want breakx('(').and('(', break(')').onmatch(....))!!
+    return str.substring(str.lastIndexOf("(") + 1,
+			 str.lastIndexOf(")"));
+}
+
 // this MUST be called (directly) by a "check" function
 function test_err(msg) {
     const err = new Error();
