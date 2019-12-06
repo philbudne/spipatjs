@@ -106,7 +106,7 @@ string, since a break character is required to be present.
 
 ### breakx(SSF)
 
-Where SSF is a String, Set, or Function behaves exactly like break(SSF)
+Where SSF is a String, Set, or Function behaves exactly like breakp(SSF)
 when it first matches, but if a string is successfully matched, then a
 subsequent failure causes an attempt to extend the matched string.
 
