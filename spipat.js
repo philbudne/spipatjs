@@ -2876,10 +2876,7 @@ console.log(`${tests} tests: ${ok} ok`);
 
 // figure out node.js/browser compatible module format!
 //    then, split tests out to separate file
-// reuse C++ tests!!!
-// reimplement stack using growable Array (push)
-//	would need to keep as negative values
-//	but grow MORE negative as items pushed!
+// XXX implement fence function!!
 // XXX test rem, pos
 // XXX test fence, fence function, succeed
 // XXX test backtrack w/ fail, abort, breakx
@@ -2888,8 +2885,11 @@ console.log(`${tests} tests: ${ok} ok`);
 // XXX handle arbno(function)
 // XXX optimize cset for sets with one (or two?) members?
 // XXX all match methods must have trace("matching...")
-// XXX so *Any_Set constructors need index????
-// XXX SimpleSetPE class??
 // XXX output patterns as SNOBOL4B (blocks) code. grap format??
-// XXX inext should be called successor? just store it?
+// XXX "inext()" should be called successor?
+// reuse C++ tests!!!
+// reimplement stack using growable Array (push)
+//	would need to keep as negative values
+//	but grow MORE negative as items pushed!
+
 // NODE_ENV=production node --prof 
