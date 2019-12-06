@@ -362,5 +362,12 @@ imgcheck(imgpat3, 'pat("1").and("23", "456").or(pat("7890").and("abcde")).or(arb
 const imgpat4 = pat("7890").and("abcde").or(arb);
 imgcheck(imgpat4, 'pat("7890").and("abcde").or(arb)'); // XXX reversed
 
+// recursive
+let recurse1 = pat('a').or(pat('b').and(() => recurse1));
+imgcheck(recurse1, 'pat("a").or(pat("b").and(() => recurse1))');
+check(recurse1.amatch('a'), 'a');
+check(recurse1.amatch('ba'), 'ba');
+check(recurse1.amatch('bbbba'), 'bbbba');
+
 //================
 console.log(`${tests} tests: ${ok} ok`);

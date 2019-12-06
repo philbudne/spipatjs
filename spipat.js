@@ -2599,6 +2599,8 @@ if (typeof exports !== 'undefined') {
 
     // for tests
     exports.get_caller = get_caller;
+    exports.LQ = LQ;
+    exports.RQ = RQ;
 }
 
 //console.log(STRING_LENGTHS);
