@@ -1637,6 +1637,7 @@ class PE_Arbno_S extends UnsealedPE {	// Arbno_S (simple Arbno initialize)
     }
 } // PE_Arbno_S
 
+// helper for arbno()
 function _arbno_simple(p) {
     let s = new PE_Arbno_S(p.index + 1, EOP, p);
     p.set_successor(s);
@@ -1733,8 +1734,7 @@ function bracket(e, p, a) {
 	patstk = p.stk;
     }
     else {
-	// XXX allow function returning pattern?
-	// would need to call function ONCE at entry
+	// XXX allow function returning pattern??
 	uerror("'arbno' need Pattern or String");
     }
     
@@ -2894,6 +2894,7 @@ console.log(`${tests} tests: ${ok} ok`);
 
 // figure out node.js/browser compatible module format!
 //    then, split tests out to separate file
+// XXX fix ".or('1', '2')" imaging!
 // XXX test rem, pos
 // XXX test fence, fencef function, succeed
 // XXX test backtrack w/ fail, abort, breakx
