@@ -66,19 +66,19 @@ of the special pattern elements that have side effects.
 
 ### pat(SF)
 
-Takes a string to match, or a function taking no arguments
+Takes a String to match, or a function taking no arguments
 that returns a string or pattern (to match) or a boolean
 (which, if true matches the null string, and if false fails)
 and returns a Pattern.
 
 ### cset(S)
 
-Takes a string and returns a (possibly optimized) Set
-representing that Unicode characters in the string.
+Takes a String and returns a (possibly optimized) character set
+representing the Unicode characters in the string.
 
 ### any(SSF)
 
-Takes a String, Set or Function (returning a String or Set).  Matches
+Takes a String, cset, or Function (returning a String or cset).  Matches
 a single character that is any one of the characters in the String or
 Set.  Fails if the current character is not one of the given set of
 characters.
@@ -98,7 +98,7 @@ including the use of alternation and concatenation.
 
 ### breakp(SSF)
 
-Where SSF is a String, Set, or Function returning a String or Set,
+Where SSF is a String, cset, or Function returning a String or cset,
 matches a string of zero or more characters up to but not including a
 break character that is one of the characters given in the string S.
 Can match the null string, but cannot match the last character in the
@@ -106,7 +106,7 @@ string, since a break character is required to be present.
 
 ### breakx(SSF)
 
-Where SSF is a String, Set, or Function behaves exactly like breakp(SSF)
+Where SSF is a String, cset, or Function behaves exactly like breakp(SSF)
 when it first matches, but if a string is successfully matched, then a
 subsequent failure causes an attempt to extend the matched string.
 
@@ -134,7 +134,7 @@ that is exactly ten characters long.
 
 ### notany(SSF)
 
-Where S is a String, Set, or Function returning a String or Set,
+Where S is a String, cset, or Function returning a String or cset,
 matches a single character that is not one of the characters.
 Fails if the current character is one of the given set of
 characters.
@@ -174,7 +174,7 @@ have already been matched.
 
 ### span(SSF)
 
-Where SSF is a String, Set, or Function, matches a string of one or more
+Where SSF is a String, cset, or Function, matches a string of one or more
 characters that is among the characters given.
 Always matches the longest possible such string.
 Fails if the current character is not one of the given

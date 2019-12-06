@@ -8,9 +8,10 @@ XXX test fence, fencef function, succeed
 XXX test backtrack w/ fail, abort, breakx
 XXX test functions as arguments to and/or
 XXX handle arbno(function)?
-XXX SmallSet class: optimize cset for sets with one (or two?) members?
-XXX "inext()" should be called successor?
+XXX "inext()" should be called successor()?
+XXX do speed testing on SmallCSet
 
+transfer more node documentation to spipat.js
 make print_{nodes,dot} Pattern methods??
 top level and/or functions??
 reuse C++ tests!!!
