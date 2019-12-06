@@ -1,0 +1,21 @@
+
+
+// figure out node.js/browser compatible module format!
+//    then, split tests out to separate file
+// XXX fix ".or('1', '2')" imaging!
+// XXX test rem, pos
+// XXX test fence, fencef function, succeed
+// XXX test backtrack w/ fail, abort, breakx
+// XXX test functions as arguments to and/or
+// XXX handle arbno(function)
+// XXX optimize cset for sets with one (or two?) members?
+// XXX all match methods must have trace("matching...")
+// XXX output patterns as SNOBOL4B (blocks) code. grap format??
+// XXX "inext()" should be called successor?
+// top level and/or functions??
+// reuse C++ tests!!!
+// reimplement stack using growable Array (push)
+//	would need to keep as negative values
+//	but grow MORE negative as items pushed!
+
+// NODE_ENV=production node --prof 
