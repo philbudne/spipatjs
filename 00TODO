@@ -21,3 +21,5 @@ reimplement stack using growable Array (push)
 
 NOTES:
 NODE_ENV=production node --prof 
+node --prof-process isolate......log
+
