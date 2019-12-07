@@ -20,6 +20,5 @@ reimplement stack using growable Array (push)
 	but grow MORE negative as items pushed!
 
 NOTES:
-NODE_ENV=production node --prof 
-node --prof-process isolate......log
-
+NODE_ENV=production nodejs --prof 
+nodejs --prof-process isolate......log
