@@ -240,6 +240,10 @@ The number of characters before the matched string
 The total number of characters from the start
 of the SUBJECT string to the end of the match.
 
+#### subject
+
+Array of Unicode characters.
+
 ### Match object methods
 
 #### replace(REPL)
