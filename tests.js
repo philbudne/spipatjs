@@ -1,11 +1,28 @@
 'use strict';
 
 var spipat = require("./spipat.js");
-for (var o in spipat)
-    global[o] = spipat[o];
+
+// UGH!
+const abort = spipat.abort;
+const any = spipat.any;
+const arb = spipat.arb;
+const arbno = spipat.arbno;
+const bal = spipat.bal;
+const breakp = spipat.breakp;
+const breakx = spipat.breakx;
+const cursor = spipat.cursor;
+const fail = spipat.fail;
+const len = spipat.len;
+const notany = spipat.notany;
+const nspan = spipat.nspan;
+const pat = spipat.pat;
+const rpos = spipat.rpos;
+const span = spipat.span;
 
 ////////////////////////////////////////////////////////////////
 // tests
+
+const deb = false;
 
 let tests = 0;
 let ok = 0;
@@ -66,8 +83,6 @@ function imgcheck(p, expect) {
 	//print_dot(p.p.ref_array())
     }
 }
-
-const deb = false;
 
 const apat = any('123' +  "😀😀😀");
 imgcheck(apat, 'any("123😀")');
