@@ -2,7 +2,7 @@
 
 var spipat = require("./spipat.js");
 
-// UGH!
+// UGH! nodejs 4.2.6 doesn't do import
 const abort = spipat.abort;
 const any = spipat.any;
 const arb = spipat.arb;
@@ -74,13 +74,14 @@ function checkval(v, expect) {
 
 function imgcheck(p, expect) {
     tests++;
+    //spipat.print_nodes(p.p.ref_array())
     let v = p.toString();
     if (v === expect)
 	ok++;
     else {
 	test_err(`imgcheck failed:\n  expecting ${LQ}${expect}${RQ}\n        got ${LQ}${v}${RQ}`);
-	//print_nodes(p.p.ref_array())
-	//print_dot(p.p.ref_array())
+	//spipat.print_nodes(p.p.ref_array())
+	//spipat.print_dot(p.p.ref_array())
     }
 }
 
