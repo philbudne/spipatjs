@@ -40,6 +40,7 @@
 //let STRING_LENGTHS = new Array(10).fill(0);
 
 // XXX for testing under nodejs, set from command line???
+//	look at process.argv or process.env
 const DEBUG_STACK = false;
 const DEBUG_IMAGE = false;
 const TEST_IMAGE = false;
@@ -69,8 +70,8 @@ function is_bool(x) {
     return (typeof x === 'boolean');
 }
 
-function is_cset(x) {
-    return x instanceof CSet || x instanceof SmallCSet;
+function is_set(x) {
+    return x instanceof Set;
 }
 
 function is_pat(x) {
@@ -125,12 +126,12 @@ function uerror(msg) {
 }
 
 function need_ssf(who) {
-    throw new SpipatUserError(`'${who}' needs String, cset, or Function`);
+    throw new SpipatUserError(`'${who}' needs String, Set, or Function`);
 }
 
 // from "ssf" matching functions
 function need_sf(who, got, func) {
-    throw new SpipatUserError(`'${who}' needs String or cset, got ${got} from ${func}`);
+    throw new SpipatUserError(`'${who}' needs String or Set, got ${got} from ${func}`);
 }
 
 function need_nnif(who, n) {
@@ -175,7 +176,6 @@ class _PE {			// Pattern Element
     }
 
     image(ic) {
-	console.trace();
 	throw this.name() + " image not defined!";
     }
 
@@ -232,7 +232,8 @@ class _PE {			// Pattern Element
     clone() {			// clone this element, for copy()
 	let copy = Object.assign({}, this);
 
-	// ????
+	// is this REALLY the best/right way?
+	// do we need to make a copy of the prototype?????
 	copy.__proto__ = Object.assign(Object.create(Object.getPrototypeOf(this)),
 				       this);
 	return copy;
@@ -242,9 +243,7 @@ class _PE {			// Pattern Element
     //  since other fixups are required on the left operand in this case, and
     //  they might as well be done all together.
     set_successor(succ) {
-	let refs = this.ref_array();
-	for (let j = 0; j < this.index; j++) {
-	    let p = refs[j];
+	for (let p of this.ref_array()) {
 	    if (p.pthen === EOP) {
 		p.pthen = succ;
 		//console.log(`set node ${p.index} pthen to ${succ.index}`);
@@ -342,12 +341,12 @@ class RunesPE extends UnsealedPE {
 	this.runes = runes;
 	this.length = runes.length; // for general case
 	this.need_pat = true;
+	this.str = runes.join('');
 	this.seal();
     }
 
     image(ic) {
-	// XXX could choose to use ' quoting if string contains "
-	ic.pappend(stringify(this.runes.join('')));
+	ic.pappend(stringify(this.str));
     }
 }
 
@@ -355,7 +354,7 @@ class RunesPE extends UnsealedPE {
 // (which may be one or two javascript "characters" long due to UTF-16)
 class PE_String_1 extends RunesPE {
     match(m) {
-	m.petrace(this, `matching ${LQ}${this.rune}${RQ}`);
+	m.petrace(this, `matching ${LQ}${this.str}${RQ}`);
 	if ((m.length - m.cursor) >= 1 &&
 	    m.subject[m.cursor+0] === this.runes[0]) {
 	    m.cursor++;
@@ -367,10 +366,7 @@ class PE_String_1 extends RunesPE {
 
 class PE_String_2 extends RunesPE {
     match(m) {
-	if (m.debug) {
-	    let str = this.runes.join('');
-	    m.petrace(this, `matching ${LQ}${str}${RQ}`);
-	}
+	m.petrace(this, `matching ${LQ}${this.str}${RQ}`);
 	if ((m.length - m.cursor) >= 2 &&
 	    m.subject[m.cursor+0] === this.runes[0] &&
 	    m.subject[m.cursor+1] === this.runes[1]) {
@@ -383,10 +379,7 @@ class PE_String_2 extends RunesPE {
 
 class PE_String_3 extends RunesPE {
     match(m) {
-	if (m.debug) {
-	    let str = this.runes.join('');
-	    m.petrace(this, `matching ${LQ}${str}${RQ}`);
-	}
+	m.petrace(this, `matching ${LQ}${this.str}${RQ}`);
 	if ((m.length - m.cursor) >= 3 &&
 	    m.subject[m.cursor+0] === this.runes[0] &&
 	    m.subject[m.cursor+1] === this.runes[1] &&
@@ -400,10 +393,7 @@ class PE_String_3 extends RunesPE {
 
 class PE_String_4 extends RunesPE {
     match(m) {
-	if (m.debug) {
-	    let str = this.runes.join('');
-	    m.petrace(this, `matching ${LQ}${str}${RQ}`);
-	}
+	m.petrace(this, `matching ${LQ}${this.str}${RQ}`);
 	if ((m.length - m.cursor) >= 4 &&
 	    m.subject[m.cursor+0] === this.runes[0] &&
 	    m.subject[m.cursor+1] === this.runes[1] &&
@@ -418,10 +408,7 @@ class PE_String_4 extends RunesPE {
 
 class PE_String_5 extends RunesPE {
     match(m) {
-	if (m.debug) {
-	    let str = this.runes.join('');
-	    m.petrace(this, `matching ${LQ}${str}${RQ}`);
-	}
+	m.petrace(this, `matching ${LQ}${this.str}${RQ}`);
 	if ((m.length - m.cursor) >= 5 &&
 	    m.subject[m.cursor+0] === this.runes[0] &&
 	    m.subject[m.cursor+1] === this.runes[1] &&
@@ -437,10 +424,7 @@ class PE_String_5 extends RunesPE {
 
 class PE_String_6 extends RunesPE {
     match(m) {
-	if (m.debug) {
-	    let str = this.runes.join('');
-	    m.petrace(this, `matching ${LQ}${str}${RQ}`);
-	}
+	m.petrace(this, `matching ${LQ}${this.str}${RQ}`);
 	if ((m.length - m.cursor) >= 6 &&
 	    m.subject[m.cursor+0] === this.runes[0] &&
 	    m.subject[m.cursor+1] === this.runes[1] &&
@@ -457,10 +441,7 @@ class PE_String_6 extends RunesPE {
 
 class PE_String extends RunesPE {
     match(m) {
-	if (m.debug) {
-	    let str = this.runes.join('');
-	    m.petrace(this, `matching ${LQ}${str}${RQ}`);
-	}
+	m.petrace(this, `matching ${LQ}${this.str}${RQ}`);
 	if ((m.length - m.cursor) >= this.length) {
 	    for (let i = 0; i < this.length; i++) {
 		if (m.subject[m.cursor + i] !== this.runes[i]) {
@@ -728,11 +709,8 @@ function pe_conc(l, r, incr) {
     if (r === EOP)
 	return l;
 
-    // build a reference array for L whose N'th element points to
-    // the pattern element of L whose original Index value is N.
-    let refs = l.ref_array();
-
-    for (let p of refs) {
+    // loop for all nodes in left
+    for (let p of l.ref_array()) {
 	p.index += r.index;
 
 	if (p instanceof PE_Arbno_Y)
@@ -1262,47 +1240,16 @@ class Stack_Entry {
 
 ////////////////////////////////////////////////////////////////
 
-class SmallCSet {
-    constructor(runes) {
-	this.runes = Array.from(new Set(runes)); // remove dups
-    }
-
-    has(rune) {
-	// want:
-	//return this.runes.includes(rune);
-	for (let r of this.runes)
-	    if (rune === r)
-		return true;
-	return false;
-    }
-
-    join() {
-	return this.runes.join('');
-    }
-}
-
-class CSet extends Set {
-    constructor(runes) {
-	super(runes);
-    }
-
-    join() {
-	return Array.from(this).join('');
-    }
-}
-
-// set constructor, so that single character (or similarly small)
-// sets can be special cased
+// make a character set
 /*export*/ function cset(str) {
     if (!is_str(str))
 	uerror("'cset' needs String");
 
-    let arr = explode(str);
-    // not speed tested!
-    //if (arr.length < 3)
-    //  return new SmallCSet(arr);
+    return new Set(explode(str));
+}
 
-    return new CSet(arr);
+function set2str(cset) {
+    return Array.from(cset).join('');
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1383,10 +1330,8 @@ function pe_alt(l, r) {
     // If the left pattern is non-null, then build a reference vector
     // for its elements, and adjust their index values to acccomodate
     // the right hand elements. Then add the alternation node.
-    let n = l.index;
-    let refs = l.ref_array();
-    for (let j = 0; j < n; j++)
-	refs[j].index += r.index;
+    for (let ref of l.ref_array())
+	ref.index += r.index;
     return new PE_Alt(l.index + 1, l, r);
 }
 
@@ -1396,16 +1341,12 @@ class SetPE extends UnsealedPE {
     constructor(index, cset, ok_for_simple_arbno) {
 	super(index, EOP, ok_for_simple_arbno || false);
 	this.cset = cset;
+	this.str = set2str(cset);
 	this.seal();
     }
 
-    data() {
-	return this.cset.join();
-    }
-
     image(ic) {
-	let str = stringify(this.data());
-	ic.append(`${this.name()}(${str})`);
+	ic.append(`${this.name()}(${stringify(this.str)})`);
     }
 }
 
@@ -1415,7 +1356,7 @@ class PE_Any_Set extends SetPE {
     }
 
     match(m) {
-	m.petrace(this, "matching any");
+	m.petrace(this, `matching any ${LQ}${this.str}${RQ}`);
 	if (m.cursor < m.length && this.cset.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	    return M_Succeed;
@@ -1439,7 +1380,7 @@ class PE_Any_Func extends FuncPE {
 	let cs = this.func();
 	if (is_str(cs))
 	    cs = cset(cs)
-	else if (!is_cset(cs))
+	else if (!is_set(cs))
 	    need_sf('any', cs, this.func);
 
 	if (m.cursor < m.length && cs.has(m.subject[m.cursor])) {
@@ -1458,7 +1399,7 @@ class PE_Any_Func extends FuncPE {
 /*export*/ function any(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_Any_Set(1, cset(x)));
-    else if (is_cset(x))
+    else if (is_set(x))
 	return new Pattern(1, new PE_Any_Set(1, x));
     else if (is_func(x))
 	return new Pattern(1, new PE_Any_Func(x));
@@ -1879,7 +1820,7 @@ class PE_Bal extends PE {	//  Bal
 
 class PE_Break_Set extends SetPE {
     match(m) {
-	m.petrace(this, "matching break");
+	m.petrace(this, `matching break ${LQ}${this.str}${RQ}`);
 	while (m.cursor < m.length && !this.cset.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	}
@@ -1897,7 +1838,7 @@ class PE_Break_Func extends FuncPE {
 	let cs = this.func();
 	if (is_str(cs))
 	    cs = cset(cs)
-	else if (!is_cset(cs))
+	else if (!is_set(cs))
 	    need_sf('break', cs, this.func);
 
 	// XXX missing trace("matching....")
@@ -1915,7 +1856,7 @@ class PE_Break_Func extends FuncPE {
 /*export*/ function breakp(x) {	// Break Pattern
     if (is_str(x))
 	return new Pattern(1, new PE_Break_Set(1, cset(x)));
-    else if (is_cset(x))
+    else if (is_set(x))
 	return new Pattern(1, new PE_Break_Set(1, x));
     else if (is_func(x))
 	return new Pattern(1, new PE_Break_Func(x));
@@ -1927,7 +1868,7 @@ class PE_Break_Func extends FuncPE {
 
 class PE_BreakX_Set extends SetPE { // breakx (character set case)
     match(m) {
-	m.petrace(this, `matching breakx ${LQ}${this.data()}${RQ}`);
+	m.petrace(this, `matching breakx ${LQ}${this.str}${RQ}`);
 	while (m.cursor < m.length) {
 	    if (this.cset.has(m.subject[m.cursor]))
 		return M_Succeed;
@@ -1953,7 +1894,7 @@ class PE_BreakX_Func extends FuncPE { //  breakx (function case)
 	    cset = cs(cset)
 	}
 	else if (is_set(cs))
-	    m.petrace(this, `matching breakx ${LQ}${cs}${RQ}`); // XXX set2string
+	    m.petrace(this, `matching breakx ${LQ}${cs}${RQ}`);
 	else
 	    need_sf('breakx', cs, this.func);
 
@@ -2202,7 +2143,7 @@ class PE_NotAny_Set extends SetPE {
     }
 
     match(m) {
-	m.petrace(this, "matching notany");
+	m.petrace(this, `matching notany ${LQ}${this.str}${RQ}`);
 	if (m.cursor < m.length && !this.cset.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	    return M_Succeed;
@@ -2225,7 +2166,7 @@ class PE_NotAny_Func extends FuncPE {
 	let cs = this.func();
 	if (is_str(cs))
 	    cs = cset(cs)
-	else if (!is_cset(cs))
+	else if (!is_set(cs))
 	    need_sf('notany', cs, this.func);
 
 	m.petrace(this, "matching notany (func)");
@@ -2245,7 +2186,7 @@ class PE_NotAny_Func extends FuncPE {
 /*export*/ function notany(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_NotAny_Set(1, cset(x)));
-    else if (is_cset(x))
+    else if (is_set(x))
 	return new Pattern(1, new PE_NotAny_Set(1, x));
     else if (is_func(x))
 	return new Pattern(1, new PE_NotAny_Func(x));
@@ -2257,7 +2198,7 @@ class PE_NotAny_Func extends FuncPE {
 
 class PE_NSpan_Set extends SetPE {
     match(m) {
-	m.petrace(this, "matching nspan");
+	m.petrace(this, `matching nspan ${LQ}${this.str}${RQ}`);
 	while (m.cursor < m.length && this.cset.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	}
@@ -2275,7 +2216,7 @@ class PE_NSpan_Func extends FuncPE {
 	let cs = this.func();
 	if (is_str(cs))
 	    cs = cset(cs)
-	else if (!is_cset(cs))
+	else if (!is_set(cs))
 	    need_sf('nspan', cs, this.func);
 
 	while (m.cursor < m.length && cs.has(m.subject[m.cursor])) {
@@ -2292,7 +2233,7 @@ class PE_NSpan_Func extends FuncPE {
 /*export*/ function nspan(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_NSpan_Set(1, cset(x)));
-    else if (is_cset(x))
+    else if (is_set(x))
 	return new Pattern(1, new PE_NSpan_Set(1, x));
     else if (is_func(x))
 	return new Pattern(1, new PE_NSpan_Func(x));
@@ -2446,7 +2387,7 @@ class PE_Span_Set extends SetPE {
 
     match(m) {
 	let c = m.cursor;
-	m.petrace(this, "matching span");
+	m.petrace(this, `matching span ${LQ}${this.str}${RQ}`);
 	while (c < m.length && this.cset.has(m.subject[c]))
 	    c++;
 	if (m.cursor !== c) {
@@ -2471,7 +2412,7 @@ class PE_Span_Func extends FuncPE {
 	let cs = this.func();
 	if (is_str(cs))
 	    cs = cset(cs)
-	else if (!is_cset(cs))
+	else if (!is_set(cs))
 	    need_sf('nspan', cs, this.func);
 
 	let c = m.cursor;
@@ -2494,7 +2435,7 @@ class PE_Span_Func extends FuncPE {
 /*export*/ function span(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_Span_Set(1, cset(x)));
-    else if (is_cset(x))
+    else if (is_set(x))
 	return new Pattern(1, new PE_Span_Set(1, x));
     else if (is_func(x))
 	return new Pattern(1, new PE_Span_Func(x));
