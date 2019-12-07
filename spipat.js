@@ -51,6 +51,7 @@ const LQ = '«';			// string left quote
 const RQ = '»';			// string right quote
 const CURSOR = '❱';		// display before cursor location
 const EOP_INDEX = 0;
+const EOP_SYMBOL = '∎';		// "end of proof" (QED)
 
 //////////////// helpers
 
@@ -169,6 +170,10 @@ class _PE {			// Pattern Element
 
     name() {
 	return this.constructor.name;
+    }
+
+    data() {
+	return null;
     }
 
     inext() {
@@ -345,6 +350,10 @@ class RunesPE extends UnsealedPE {
 	this.seal();
     }
 
+    data() {
+	return stringify(this.str);
+    }
+
     image(ic) {
 	ic.pappend(stringify(this.str));
     }
@@ -461,6 +470,13 @@ class FuncPE extends UnsealedPE {
 	this.func = func;
 	this.need_pat = need_pat || false;
 	this.seal();
+    }
+
+    data() {
+	if (this.func.name)
+	    return this.func.name;
+	else
+	    return this.func.toString(); // anonymous: return defn
     }
 
     image(ic) {
@@ -709,6 +725,8 @@ function pe_conc(l, r, incr) {
     if (r === EOP)
 	return l;
 
+    // XXX optimize two strings with no alts?
+
     // loop for all nodes in left
     for (let p of l.ref_array()) {
 	p.index += r.index;
@@ -921,11 +939,18 @@ class DMatch extends Match {	// debug match
 
 function print_nodes(refs) {
     for (let r of refs) {
-	// EOP will display as EOP_INDEX
-	if (r.has_alt)
-	    console.log(r.index, r.constructor.name, r.pthen.index, r.alt.index);
+	// EOP will display as EOP_SYMBOL
+	let line = `${r.index} ${r.constructor.name}`;
+	let d = r.data();
+	if (d !== null)
+	    line += ` ${d}`;
+	if (r.pthen === EOP)
+	    line += ' ' + EOP_SYMBOL;
 	else
-	    console.log(r.index, r.constructor.name, r.pthen.index);
+	    line += ` then ${r.pthen.index}`;
+	if (r.has_alt)
+	    line += ` alt ${r.alt.index}`; // XXX check for EOP?
+	console.log(line);
     }
 }
 
@@ -1343,6 +1368,10 @@ class SetPE extends UnsealedPE {
 	this.cset = cset;
 	this.str = set2str(cset);
 	this.seal();
+    }
+
+    data() {
+	return stringify(this.str);
     }
 
     image(ic) {
@@ -2072,6 +2101,10 @@ class IntPE extends UnsealedPE {
 	super();
 	this.n = n;
 	this.seal();
+    }
+
+    data() {
+	return this.n
     }
 
     image(ic) {
