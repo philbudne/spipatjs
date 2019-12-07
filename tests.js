@@ -28,7 +28,7 @@ let tests = 0;
 let ok = 0;
 let err = 0;
 
-// return n'th entry in an Error().stack output
+// return file:line:char from n'th line in Error().stack output
 function get_caller(stack, n) {
     const trace = stack.split("\n");
     const str = trace[n];
