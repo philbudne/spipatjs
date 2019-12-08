@@ -1,3 +1,10 @@
+// XXX test immediate assign
+// XXX test rem, pos
+// XXX test fence, fencef function, succeed
+// XXX test backtrack w/ fail, abort, breakx
+// XXX test functions as arguments to and/or
+// XXX test vars('x') w/ (not)any, (n)span, break(p|x)
+
 'use strict';
 
 var spipat = require("./spipat.js");
@@ -18,6 +25,10 @@ const nspan = spipat.nspan;
 const pat = spipat.pat;
 const rpos = spipat.rpos;
 const span = spipat.span;
+const vars = spipat.vars;
+
+const LQ = spipat.LQ;
+const RQ = spipat.RQ;
 
 ////////////////////////////////////////////////////////////////
 // tests
@@ -138,45 +149,69 @@ check(strpat.umatch('      hello world     ', deb), 'hello');
 check(strpat2.umatch('      hello world     ', deb), 'hello world');
 check(strpat3.umatch('      hello world     ', deb), 'hello world');
 
-//// assign on match
+//// call on match
 let v;
+function set_v(x) {
+    v = x;
+}
 
-const aspat = strpat.onmatch(function (x) { v = x; });
-imgcheck(aspat, 'pat("hello").onmatch(function (x) { v = x; })')
+const aspat = strpat.onmatch(set_v);
+imgcheck(aspat, 'pat("hello").onmatch(set_v)')
 check(aspat.umatch('   hello world   ', deb), 'hello');
 checkval(v, 'hello')
 
 const aspat2 = aspat.and(" world");
-imgcheck(aspat2, 'pat("hello").onmatch(function (x) { v = x; }).and(" world")')
+imgcheck(aspat2, 'pat("hello").onmatch(set_v).and(" world")')
 check(aspat2.umatch('   hello world   ', deb), 'hello world');
 checkval(v, 'hello')
 
 // full pattern will not match, so assign on match should not occur
 const aspat3 = aspat.and(" goodbye");
-imgcheck(aspat3, 'pat("hello").onmatch(function (x) { v = x; }).and(" goodbye")')
+imgcheck(aspat3, 'pat("hello").onmatch(set_v).and(" goodbye")')
 v = null;
 checkval(aspat3.umatch('   hello world   ', false), null);
 checkval(v, null);
 
-//// immediate assign
-const iaspat = strpat.imm(function (x) { v = x; });
-imgcheck(iaspat, 'pat("hello").imm(function (x) { v = x; })')
+//// set vars on match
+
+const asvpat = strpat.onmatch('v');
+imgcheck(asvpat, 'pat("hello").onmatch("v")')
+var m = asvpat.umatch('   hello world   ', deb);
+check(m, 'hello');
+checkval(m.vars.v, 'hello')
+
+const asvpat2 = asvpat.and(" world");
+imgcheck(asvpat2, 'pat("hello").onmatch("v").and(" world")')
+m = asvpat2.umatch('   hello world   ', deb);
+check(m, 'hello world');
+checkval(m.vars.v, 'hello')
+
+//// immediate call
+
+const iaspat = strpat.imm(set_v);
+imgcheck(iaspat, 'pat("hello").imm(set_v)')
 check(iaspat.umatch('   hello world   ', deb), 'hello');
 checkval(v, 'hello')
 
 // larger full match
 const iaspat2 = iaspat.and(" world");
-imgcheck(iaspat2, 'pat("hello").imm(function (x) { v = x; }).and(" world")')
+imgcheck(iaspat2, 'pat("hello").imm(set_v).and(" world")')
 v = null;
 check(iaspat2.umatch('   hello world   ', deb), 'hello world');
 checkval(v, 'hello')
 
 // full pattern will not match, but immediate assign should occur
 const iaspat3 = iaspat.and(" goodbye");
-imgcheck(iaspat3, 'pat("hello").imm(function (x) { v = x; }).and(" goodbye")')
+imgcheck(iaspat3, 'pat("hello").imm(set_v).and(" goodbye")')
 v = null;
-checkval(iaspat3.umatch('   hello world   ', false), null);
+checkval(iaspat3.umatch('   hello world   ', deb), null);
 checkval(v, 'hello');
+
+// immediate var set
+const iasvpat = strpat.imm('v');
+imgcheck(iasvpat, 'pat("hello").imm("v")')
+check(iasvpat.umatch('   hello world   ', deb), 'hello');
+checkval(v, 'hello')
 
 //// alternation
 const alpat1 = pat('day').or('night');
@@ -384,7 +419,7 @@ check(imgpat1.amatch("ab", deb), "ab")
 check(imgpat1.amatch("xyzb", deb), "xyzb")
 
 const imgpat2 = pat("1").and("23", "456").or(pat("7890").and("abcde"));
-imgcheck(imgpat2, 'pat("1").and("23", "456").or(pat("7890").and("abcde"))'); // XXX fails (reversed)
+imgcheck(imgpat2, 'pat("1").and("23", "456").or(pat("7890").and("abcde"))'); // XXX reversed
 check(imgpat2.amatch("123456", deb), "123456")
 check(imgpat2.amatch("7890abcde", deb), "7890abcde")
 
@@ -395,7 +430,7 @@ imgcheck(imgpat3, 'pat("1").and("23", "456").or(pat("7890").and("abcde")).or(arb
 const imgpat4 = pat("7890").and("abcde").or(arb);
 imgcheck(imgpat4, 'pat("7890").and("abcde").or(arb)'); // XXX reversed
 
-// recursive
+// recursive pattern
 let recurse1 = pat('a').or(pat('b').and(() => recurse1));
 imgcheck(recurse1, 'pat("a").or(pat("b").and(() => recurse1))');
 check(recurse1.amatch('a'), 'a');
