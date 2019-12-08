@@ -3,10 +3,6 @@ TODO:
 figure out node.js/browser compatible module format!
 
 XXX fix ".or('1', '2')" imaging!
-XXX test rem, pos
-XXX test fence, fencef function, succeed
-XXX test backtrack w/ fail, abort, breakx
-XXX test functions as arguments to and/or
 XXX handle arbno(function)?
 XXX "inext()" should be called successor()?
 XXX do speed testing on SmallCSet
