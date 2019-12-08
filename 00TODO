@@ -2,14 +2,19 @@ TODO:
 
 figure out node.js/browser compatible module format!
 
-XXX fix ".or('1', '2')" imaging!
-XXX handle arbno(function)?
+XXX fix "or" imaging!
 XXX "inext()" should be called successor()?
-XXX do speed testing on SmallCSet
+XXX document Var() object
 
+'null' pattern variable?? PE_Null or PE_EOP??
 transfer more node documentation to spipat.js
 make print_{nodes,dot} Pattern methods??
+PE_((Not)Any|Break|(N)Span)_Func: display func value in "matching"
+add PE_((Not)Any|Break(x)|(N)Span)_Var nodes for better display
+make Pattern class more opaque?
 top level and/or functions??
+handle arbno(function)?
+support Vars in .cursor or (r)(tab|pos), len
 reuse C++ tests!!!
 reimplement stack using growable Array (push)
 	would need to keep as negative values

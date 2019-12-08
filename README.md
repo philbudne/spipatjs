@@ -66,22 +66,21 @@ of the special pattern elements that have side effects.
 
 ### pat(SF)
 
-Takes a String to match, or a function taking no arguments
-that returns a string or pattern (to match) or a boolean
-(which, if true matches the null string, and if false fails)
-and returns a Pattern.
+Takes a String to match, or a function that returns a string or
+pattern (to match) or a boolean (which, if true matches the null
+string, and if false fails) and returns a Pattern.
 
 ### cset(S)
 
 Takes a String and returns a (possibly optimized) character set
 representing the Unicode characters in the string.
 
-### any(SSF)
+### any(SSFV)
 
-Takes a String, cset, or Function (returning a String or cset).  Matches
-a single character that is any one of the characters in the String or
-Set.  Fails if the current character is not one of the given set of
-characters.
+Takes a String, cset, Function (returning a String or cset), or Var
+object.  Matches a single character that is any one of the characters
+in the String or Set.  Fails if the current character is not one of
+the given set of characters.
 
 ### arbno(P)
 
@@ -96,19 +95,21 @@ null.or(P.and(null.or(P.and(null.or( ....)))))
 The pattern P may contain any number of pattern elements
 including the use of alternation and concatenation.
 
-### breakp(SSF)
+### breakp(SSFV)
 
-Where SSF is a String, cset, or Function returning a String or cset,
-matches a string of zero or more characters up to but not including a
-break character that is one of the characters given in the string S.
-Can match the null string, but cannot match the last character in the
-string, since a break character is required to be present.
+Where SSF is a String, cset, Function returning a String or cset, or
+Var object.  matches a string of zero or more characters up to but not
+including a break character that is one of the characters given in the
+string S.  Can match the null string, but cannot match the last
+character in the string, since a break character is required to be
+present.
 
-### breakx(SSF)
+### breakx(SSFV)
 
-Where SSF is a String, cset, or Function behaves exactly like breakp(SSF)
-when it first matches, but if a string is successfully matched, then a
-subsequent failure causes an attempt to extend the matched string.
+Where SSFV is a String, cset, Function, or Var behaves exactly like
+breakp(SSFV) when it first matches, but if a string is successfully
+matched, then a subsequent failure causes an attempt to extend the
+matched string.
 
 ### cursor(F)
 
@@ -132,14 +133,13 @@ Where N is a positive integer (or Function returning one), matches the
 given number of characters. For example, Len(10) matches any string
 that is exactly ten characters long.
 
-### notany(SSF)
+### notany(SSFV)
 
-Where S is a String, cset, or Function returning a String or cset,
-matches a single character that is not one of the characters.
-Fails if the current character is one of the given set of
-characters.
+Where S is a String, cset, Function returning a String or cset, or
+Var, matches a single character that is not one of the characters.
+Fails if the current character is one of the given set of characters.
 
-### nspan(SSF)
+### nspan(SSFV)
 
 Where SSF is a String, yadda, yadda, matches a string of zero or more
 characters that is among the characters given in the string. Always
@@ -172,13 +172,12 @@ the current position until exactly N characters have
 been matched in all. Fails if more than N characters
 have already been matched.
 
-### span(SSF)
+### span(SSFV)
 
-Where SSF is a String, cset, or Function, matches a string of one or more
-characters that is among the characters given.
-Always matches the longest possible such string.
-Fails if the current character is not one of the given
-set of characters.
+Where SSF is a String, cset, Function, or Var, matches a string of one
+or more characters that is among the characters given.  Always matches
+the longest possible such string.  Fails if the current character is
+not one of the given set of characters.
 
 ## Pattern object
 

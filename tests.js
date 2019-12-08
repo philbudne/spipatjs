@@ -25,8 +25,8 @@ const nspan = spipat.nspan;
 const pat = spipat.pat;
 const rpos = spipat.rpos;
 const span = spipat.span;
-const vars = spipat.vars;
 
+const Var = spipat.Var;
 const LQ = spipat.LQ;
 const RQ = spipat.RQ;
 
@@ -174,17 +174,20 @@ checkval(v, null);
 
 //// set vars on match
 
-const asvpat = strpat.onmatch('v');
-imgcheck(asvpat, 'pat("hello").onmatch("v")')
+let vv = new Var('vv');
+const asvpat = strpat.onmatch(vv);
+imgcheck(asvpat, 'pat("hello").onmatch(Var("vv"))')
 var m = asvpat.umatch('   hello world   ', deb);
 check(m, 'hello');
-checkval(m.vars.v, 'hello')
+checkval(vv.get(), 'hello')
 
+vv.set(null);
+checkval(vv.get(), null)
 const asvpat2 = asvpat.and(" world");
-imgcheck(asvpat2, 'pat("hello").onmatch("v").and(" world")')
+imgcheck(asvpat2, 'pat("hello").onmatch(Var("vv")).and(" world")')
 m = asvpat2.umatch('   hello world   ', deb);
 check(m, 'hello world');
-checkval(m.vars.v, 'hello')
+checkval(vv.get(), 'hello')
 
 //// immediate call
 
@@ -208,10 +211,18 @@ checkval(iaspat3.umatch('   hello world   ', deb), null);
 checkval(v, 'hello');
 
 // immediate var set
-const iasvpat = strpat.imm('v');
-imgcheck(iasvpat, 'pat("hello").imm("v")')
+const iasvpat = strpat.imm(vv);
+imgcheck(iasvpat, 'pat("hello").imm(Var("vv"))')
 check(iasvpat.umatch('   hello world   ', deb), 'hello');
-checkval(v, 'hello')
+checkval(vv.get(), 'hello')
+
+// full pattern will not match, but immediate assign should occur
+vv.set(null);
+checkval(vv.get(), null)
+const iasvpat3 = iasvpat.and(" goodbye");
+imgcheck(iasvpat3, 'pat("hello").imm(Var("vv")).and(" goodbye")')
+checkval(iasvpat3.umatch('   hello world   ', deb), null);
+checkval(vv.get(), 'hello');
 
 //// alternation
 const alpat1 = pat('day').or('night');
