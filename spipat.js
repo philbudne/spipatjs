@@ -1,6 +1,3 @@
-// need_fv XXXXXX
-// vars(x) Pattern.vars(x) -- implement by passing Match to Call_{Imm,OnM}?
-
 // SPITBOL Patterns in JavaScript
 // Based on GNAT (GNU Ada Translator) GNAT.SPITBOL.PATTERNS
 ////////////////////////////////////////////////////////////////
@@ -151,9 +148,9 @@ function need_nni(who, n, func) {
     throw new SpipatUserError(`'${who}' needs non-negative integer from function ${func} got ${n}`);
 }
 
-// onmatch/imm functions need function or Var
+// onmatch/imm/cursor need function or Var
 function need_fv(who) {
-    throw new SpipatUserError(`'${who}' needs function or Var`);
+    throw new SpipatUserError(`'${who}' needs Function or Var`);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2127,8 +2124,12 @@ class PE_Cursor extends FuncPE {    //  Cursor assignment
     }
 }
 
-/*export*/ function cursor(func) {
-    return new Pattern(0, new PE_Cursor(func));
+/*export*/ function cursor(x) {
+    if (is_func(x))
+	return new Pattern(0, new PE_Cursor(x));
+    if (is_var(x))
+	return new Pattern(0, new PE_Cursor(x.setter)); // TEMP
+    need_fv('cursor');
 }
 
 //////////////// fail
@@ -2441,9 +2442,11 @@ class PE_Pos_Func extends FuncPE { // pos(func)
 /*export*/ function pos(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_Pos_Func(n));
-    if (!is_int(n) || n < 0)
-	need_nnif('pos', n);
-    return new Pattern(0, new PE_Pos_Int(n));
+    if (is_var(n))
+	return new Pattern(0, new PE_Pos_Func(n.getter)); // TEMP
+    if (is_int(n) && n >= 0)
+	return new Pattern(0, new PE_Pos_Int(n));
+    need_nnif('pos', n);
 }
 
 //////////////// rpos
@@ -2480,9 +2483,11 @@ class PE_RPos_Func extends FuncPE { // pos(func)
 /*export*/ function rpos(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_RPos_Func(n));
-    if (!is_int(n) || n < 0)
-	need_nnif('rpos', n);
-    return new Pattern(0, new PE_RPos_Int(n));
+    if (is_var(n))
+	return new Pattern(0, new PE_RPos_Func(n.getter)); // TEMP
+    if (is_int(n) && n >= 0)
+	return new Pattern(0, new PE_RPos_Int(n));
+    need_nnif('rpos', n);
 }
 
 //////////////// rtab
@@ -2523,9 +2528,11 @@ class PE_RTab_Func extends FuncPE { // rtab(func)
 /*export*/ function rtab(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_RTab_Func(n));
-    if (!is_int(n) || n < 0)
-	need_nnif('rtab', n);
-    return new Pattern(0, new PE_RTab_Int(n));
+    if (is_var(n))
+	return new Pattern(0, new PE_RTab_Func(n.getter)); // TEMP
+    if (is_int(n) && n >= 0)
+	return new Pattern(0, new PE_RTab_Int(n));
+    need_nnif('rtab', n);
 }
 
 //////////////// rem
@@ -2665,9 +2672,11 @@ class PE_Tab_Func extends FuncPE { // tab(func)
 /*export*/ function tab(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_Tab_Func(n));
-    if (!is_int(n) || n < 0)
-	need_nnif('tab', n);
-    return new Pattern(0, new PE_Tab_Int(n));
+    if (is_var(n))
+	return new Pattern(0, new PE_Tab_Func(n.getter)); // TEMP
+    if (is_int(n) && n >= 0)
+	return new Pattern(0, new PE_Tab_Int(n));
+    need_nnif('tab', n);
 }
 
 //////////////// var
