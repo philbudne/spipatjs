@@ -1,9 +1,8 @@
-// XXX test immediate assign
-// XXX test rem, pos
-// XXX test fence, fencef function, succeed
+// XXX test rem, pos, fence, fencef function, succeed
 // XXX test backtrack w/ fail, abort, breakx
 // XXX test functions as arguments to and/or
-// XXX test vars('x') w/ (not)any, (n)span, break(p|x)
+// XXX test (not)any, (n)span, break(p|x) w/ Var
+// XXX test test (r)(pos|tab) w/ Var (& function?)
 
 'use strict';
 
