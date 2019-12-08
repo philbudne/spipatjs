@@ -2286,17 +2286,17 @@ class PC_Len_Func extends FuncPE { // len (function case)
     if (is_int(x)) {
 	//  Note, the following is not just an optimization, it is needed
 	//  to ensure that Arbno (Len (0)) does not generate an infinite
-	//  matching loop (since PC_Len_Nat is OK_For_Simple_Arbno).
+	//  matching loop (since PC_Len is ok_for_simple_arbno).
 	if (x === 0)
-	    return new Pattern(0, new PE_Null());
-	else
+	    return new Pattern(0, new PE_Null()); // not ok_for_simple_arbno
+	else if (x > 0)
 	    return new Pattern(0, new PE_Len(x));
     }
-    else if (is_func(x)) {
+    else if (is_func(x))
 	return new Pattern(0, new PE_Len_Func(x));
-    }
-    else
-	uerror("len takes int or function");
+    else if (is_var(x))
+	return new Pattern(0, new PE_Len_Func(x.getter));
+    uerror("'len' takes non-negative Number or Function");
 }
 
 
