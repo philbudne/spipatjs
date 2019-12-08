@@ -1,4 +1,8 @@
+// need_fv XXXXXX
+// vars(x) Pattern.vars(x) -- implement by passing Match to Call_{Imm,OnM}?
+
 // SPITBOL Patterns in JavaScript
+// Based on GNAT (GNU Ada Translator) GNAT.SPITBOL.PATTERNS
 ////////////////////////////////////////////////////////////////
 //          Copyright (C) 1998-2013, AdaCore
 //          Copyright (C) 2007-2019, Philip L. Budne
@@ -481,7 +485,7 @@ class FuncPE extends UnsealedPE {
 
     image(ic) {
 	// NOTE!! expands to function definition!
-	ic.append(`${this.name()}(${this.func})`);
+	ic.append(`${this.name()}(${this.data()})`);
     }
 }
 
@@ -493,9 +497,9 @@ class PE_Func extends FuncPE {
     }
 
     match(m) {
-	let x = this.func();
+	let x = this.func(m.vars);
 	if (is_str(x)) {
-	    m.petrace(this, `function ${this.func} matching ${LQ}${x}${RQ}`);
+	    m.petrace(this, `function ${this.func.name} matching ${LQ}${x}${RQ}`);
 	    let runes = explode(x);
 	    let length = runes.length;
 	    if ((m.length - m.cursor) >= length) {
@@ -531,9 +535,9 @@ class PE_Func extends FuncPE {
     }
 
     image(ic) {
-	ic.pappend(`${this.func}`); // NOTE!! expands to function defn
+	ic.pappend(`${this.data()}`); // function name or defn
     }
-}
+} // PE_Func
 
 // string or function to PE
 function sf_to_pe(who, x) {
@@ -590,21 +594,21 @@ const CP_Abort = new PE_Abort(); // for anchored match, fence
 ////////////////
 // Assign Node (internal)
 
-class PE_Call extends PE { // Assignment on match
+class PE_Assign extends PE { // Assignment on match
     match(m) {
 	// If this node is executed, it means the assign-on-match
 	// (call-on-match) operation will not happen after all, so we
-	// propagate the failure, removing the PE_Call node.
+	// propagate the failure, removing the PE_Assign node.
 	m.petrace(this, "deferred assign/call cancelled");
 	return M_Fail;
     }
 
     clone() {			// single instance, stacked only
-	error("PE_Call.clone");
+	error("PE_Assign.clone");
     }
 }
 
-const CP_Call = new PE_Call();
+const CP_Assign = new PE_Assign();
 
 ////////////////
 // Region Enter node (internal)
@@ -757,6 +761,7 @@ class Match {
 	this.length = 0;	// set by match()
 	this.node = null;	// set by match()
 	this.stack = null;	// set by match()
+	this.vars = {};
 
 	// Set true when assign-on-match (call-on-match) operations may be
 	// present in the history stack, which must then be scanned on a
@@ -801,7 +806,7 @@ class Match {
 	    this.stack.put(this.stack.init, 0, new PE_Unanchored(this.node));
 	}
 
-	this.trace(`======== match ${subject} anchored ${this.anchored}`);
+	this.trace(`======== match ${LQ}${subject}${RQ} anchored=${this.anchored}`);
 	while (this.node) {
 	    let n = this.node;
 	    this.trace_match(n)
@@ -839,16 +844,15 @@ class Match {
 		    let stk = this.stack;
 		    for (let s = stk.first; s <= stk.ptr; s++) {
 			let stkent = stk.peek(s);
-			if (stkent.node === CP_Call) {
+			if (stkent.node === CP_Assign) {
 			    let inner_base = stk.peek(s + 1).cursor; // stack ptr
 			    let special_entry = stk.peek(inner_base - 1);
 			    let start = special_entry.cursor + 1;
-			    let stop = stkent.cursor; // from a CP_Call stack entry
+			    let stop = stkent.cursor; // from a CP_Assign stack entry
 			    let str = this.slice(start, stop);
 			    let on_match = special_entry.node;
-			    this.trace(` calling ${on_match.func} with ${LQ}${str}${RQ}`);
-			    on_match.func(str);
-			} // CP_Call
+			    on_match.onmatch(this, str);
+			} // CP_Assign
 		    } // for each stack entry
 		} // assign_on_match
 		return true;
@@ -918,7 +922,10 @@ class DMatch extends Match {	// debug match
 	super(anchored, stack_size);
 	this.debug = true;
     }
+
     trace_match(n) {
+	// XXX if this.cursor < 0, display as stack pointer!!
+	// XXX need to handle negative (SP) values??
 	let before = this.slice(1, this.cursor);
 	let after = this.slice(this.cursor+1, this.length);
 	let str =  LQ + before + CURSOR + after + RQ;
@@ -933,6 +940,12 @@ class DMatch extends Match {	// debug match
     petrace(pe, msg) {		// PE trace
 	console.log(`  node ${pe.index} ${msg}`);
     }
+}
+
+// return a "getter" for match.vars[var_name]
+// for use with (not)any, (n)span, break(p|x)
+/*export*/ function vars(var_name) {
+    return (match_vars) => match_vars[var_name];
 }
 
 ////////////////
@@ -980,7 +993,6 @@ class ImageContext {
 	this.result = "";
 
 	// these two probably don't belong!
-	this.kill_and = true;
 	this.first = true;
 
 	if (DEBUG_IMAGE) {
@@ -1140,7 +1152,7 @@ class Pattern {		// primative pattern
 	return new Pattern(lstk, lp);
     }
 
-    imm(func) {
+    imm(x) {
 	// +---+     +---+     +---+
 	// | E |---->| P |---->| A |---->
 	// +---+     +---+     +---+
@@ -1151,12 +1163,17 @@ class Pattern {		// primative pattern
 	// and the E node is N + 2.
 	const e   = new PE_R_Enter();
 	const pat = this.p.copy();
-	const a   = new PE_Call_Imm(func);
-    
+	let a;
+	if (is_func(x))
+	    a = new PE_Call_Imm(x);
+	else if (is_str(x))
+	    a = new PE_Var_Imm(x);
+	else
+	    need_fv();
 	return new Pattern(this.stk + 3, bracket(e, pat, a));
     }
 
-    onmatch(func) {
+    onmatch(x) {
 	// +---+     +---+     +---+
 	// | E |---->| P |---->| C |---->
 	// +---+     +---+     +---+
@@ -1168,7 +1185,14 @@ class Pattern {		// primative pattern
 
 	const e   = new PE_R_Enter();
 	const pat = this.p.copy();
-	const c   = new PE_Call_OnM(func);
+	let a;
+	if (is_func(x))
+	    a = new PE_Call_OnM(x);
+	else if (is_str(x))
+	    a = new PE_Var_OnM(x);
+	else
+	    need_fv();
+	return new Pattern(this.stk + 3, bracket(e, pat, a));
     
 	return new Pattern(this.stk + 3, bracket(e, pat, c));
     }
@@ -1273,6 +1297,7 @@ class Stack_Entry {
     return new Set(explode(str));
 }
 
+// utility
 function set2str(cset) {
     return Array.from(cset).join('');
 }
@@ -1406,7 +1431,7 @@ class PE_Any_Func extends FuncPE {
 
     match(m) {
 	m.petrace(this, "matching any (func)");
-	let cs = this.func();
+	let cs = this.func(m.vars);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
@@ -1782,9 +1807,41 @@ class PE_Call_Imm extends FuncPE {
     }
 
     image(ic) {
-	// first should not happen!
-	ic.kill_and = true;
-	ic.append(`.imm(${this.func})`); // expands function defn
+	// assert(!first)?
+	ic.append(`.imm(${this.data()})`); // function name or defn
+    }
+}
+
+class VarPE extends UnsealedPE {
+    constructor(v) {
+	super();
+	this.no_and = true;	// want class member
+	this.v = v;
+	this.seal();
+    }
+
+    data() {
+	return stringify(this.v);
+    }
+}
+
+class PE_Var_Imm extends VarPE {
+    constructor(v) {
+	super(v);
+    }
+
+    match(m) {
+	let stk = m.stack;
+	let s = m.slice(stk.peek(stk.base - 1).cursor + 1, m.cursor);
+	m.petrace(this, `imm setting vars.${this.v} to ${LQ}${s}${RQ}`);
+	m.vars[this.v] = s;
+	m.pop_region();
+	return M_Succeed;
+    }
+
+    image(ic) {
+	// assert(!first)?
+	ic.append(`.imm(${this.data()})`);
     }
 }
 
@@ -1800,15 +1857,46 @@ class PE_Call_OnM extends FuncPE {
     match(m) {
 	m.petrace(this, "registering deferred call");
 	m.stack.put_node(m.stack.base - 1, m.node);
-	m.push(CP_Call);
+	m.push(CP_Assign);
 	m.pop_region();
 	m.assign_on_match = true;
 	return M_Succeed;
     }	
 
+    onmatch(m, str) {
+	m.trace(` calling ${this.func} with ${LQ}${str}${RQ}`);
+	this.func(str);
+    }
+
     image(ic) {
-	// first should not happen!
-	ic.append(`.onmatch(${this.func})`); // expands function defn
+	// assert(!first)?
+	ic.append(`.onmatch(${this.data()})`); // function name or defn
+    }
+}
+
+// This node sets up for the eventual assignment
+class PE_Var_OnM extends VarPE {
+    constructor(v) {
+	super(v);
+    }
+
+    match(m) {
+	m.petrace(this, "registering deferred assign");
+	m.stack.put_node(m.stack.base - 1, m.node);
+	m.push(CP_Assign);
+	m.pop_region();
+	m.assign_on_match = true;
+	return M_Succeed;
+    }	
+
+    onmatch(m, str) {
+	m.trace(` setting vars.${this.v} to ${LQ}${str}${RQ}`);
+	m.vars[this.v] = str;
+    }
+
+    image(ic) {
+	// assert(!first)?
+	ic.append(`.onmatch(${this.data()})`);
     }
 }
 
@@ -1864,7 +1952,7 @@ class PE_Break_Set extends SetPE {
 class PE_Break_Func extends FuncPE {
     match(m) {
 	m.petrace(this, "matching break (func)");
-	let cs = this.func();
+	let cs = this.func(m.vars);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
@@ -1917,7 +2005,7 @@ class PE_BreakX_Set extends SetPE { // breakx (character set case)
 
 class PE_BreakX_Func extends FuncPE { //  breakx (function case)
     match(m) {
-	let cs = this.func();
+	let cs = this.func(m.vars);
 	if (is_str(cs)) {
 	    m.petrace(this, `matching breakx ${LQ}${cs}${RQ}`);
 	    cset = cs(cset)
@@ -2196,7 +2284,7 @@ class PE_NotAny_Func extends FuncPE {
     }
 
     match(m) {
-	let cs = this.func();
+	let cs = this.func(m.vars);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
@@ -2246,7 +2334,7 @@ class PE_NSpan_Set extends SetPE {
 class PE_NSpan_Func extends FuncPE {
     match(m) {
 	m.petrace(this, "matching nspan (func)");
-	let cs = this.func();
+	let cs = this.func(m.vars);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
@@ -2442,7 +2530,7 @@ class PE_Span_Func extends FuncPE {
     }
 
     match(m) {
-	let cs = this.func();
+	let cs = this.func(m.vars);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
@@ -2534,6 +2622,9 @@ class PE_Tab_Func extends FuncPE { // tab(func)
 	need_nnif('tab', n);
     return new Pattern(0, new PE_Tab_Int(n));
 }
+
+//////////////// var
+
 
 ////////////////////////////////////////////////////////////////
 
