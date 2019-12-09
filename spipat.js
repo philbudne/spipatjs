@@ -1347,7 +1347,6 @@ class PE_Alt extends AltPE {
     }
 
     image(ic) {
-	// gather all alternatives in a list
 	let er = this.inext();
 
 	ic.sequence(this.pthen, er, false); // no bare strings!
@@ -1388,8 +1387,8 @@ function pe_alt(l, r) {
 }
 
 // class for match-time variable.
-// pass to .imm/.onmatch or (not)any, break(p|x), (n)span
-// (not (yet) supported for .cursor or (r)(tab|pos), len)
+// pass to .imm/.onmatch, (not)any, break(p|x), (n)span
+//	cursor or (r)(tab|pos), len)
 let vnum = 1;
 
 class Var {
@@ -1412,14 +1411,6 @@ class Var {
 
     toString() {
 	return `Var(${stringify(this.name)})`;
-    }
-
-    getter() {
-	return () => this.get();
-    }
-
-    setter() {
-	return (value) => this.set(value);
     }
 }
 
@@ -2665,9 +2656,6 @@ class PE_Tab_Func extends FuncPE { // tab(func)
 	return new Pattern(0, new PE_Tab_Int(n));
     need_nnif('tab', n);
 }
-
-//////////////// var
-
 
 ////////////////////////////////////////////////////////////////
 
