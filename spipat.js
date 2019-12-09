@@ -92,8 +92,9 @@ function is_var(x) {
 // and expanded it to a list with one symbol per character, see:
 // http://www.maclisp.info/pitmanual/charac.html#EXPLODE
 
-// "Rune" was the name the datatype used to hold unicode characters on
-// "Plan9 from Bell Labs", where UTF-8 was invented by Brian Kernighan.
+// "Rune" was the name the datatype used to hold unicode characters
+// (code points) on "Plan9 from Bell Labs", where UTF-8 was invented
+// by Brian Kernighan and implement by Kernighan and Pike.
 
 // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.45.1638&rep=rep1&type=pdf
 // https://www.researchgate.net/scientific-contributions/3228095_Ken_Thompson
@@ -1299,6 +1300,36 @@ function set2str(cset) {
 }
 
 ////////////////////////////////////////////////////////////////
+
+// class for match-time variable.
+// pass to .imm/.onmatch, (not)any, break(p|x), (n)span
+//	cursor or (r)(tab|pos), len)
+let vnum = 1;
+
+class Var {
+    constructor(name, value) {
+	if (!name)
+	    name = `var${vnum++}`;
+	this.name = name
+	this.value = value
+	// XXX temporary crock, need to clone all the node types!
+	this.getter = () => this.get();
+    }
+
+    get() {
+	return this.value;
+    }
+
+    set(value) {
+	this.value = value;
+    }
+
+    toString() {
+	return `Var(${stringify(this.name)})`;
+    }
+}
+
+////////////////////////////////////////////////////////////////
 // Pattern implementation
 
 //////////////// abort
@@ -1380,34 +1411,6 @@ function pe_alt(l, r) {
     for (let ref of l.ref_array())
 	ref.index += r.index;
     return new PE_Alt(l.index + 1, l, r);
-}
-
-// class for match-time variable.
-// pass to .imm/.onmatch, (not)any, break(p|x), (n)span
-//	cursor or (r)(tab|pos), len)
-let vnum = 1;
-
-class Var {
-    constructor(name, value) {
-	if (!name)
-	    name = `var${vnum++}`;
-	this.name = name
-	this.value = value
-	// XXX temporary crock, need to clone all the node types!
-	this.getter = () => this.get();
-    }
-
-    get() {
-	return this.value;
-    }
-
-    set(value) {
-	this.value = value;
-    }
-
-    toString() {
-	return `Var(${stringify(this.name)})`;
-    }
 }
 
 //////////////// any
