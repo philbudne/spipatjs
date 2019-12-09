@@ -161,7 +161,7 @@ const M_Pattern_Success = 0;	// entire pattern succeeded
 const M_Pattern_Fail = 1;	// entire pattern failed
 const M_Succeed = 2;		// node match succeeded
 const M_Fail = 3;		// node match failed
-const M_Match = 4;		// nothing to see, move along
+const M_Continue = 4;		// node changed, continue
 
 // super-base class.  The only instance of a class directly derived
 // from _PE is the singleton PE_EOP instance, EOP, so that the const
@@ -295,7 +295,7 @@ class PE_EOP extends _PE {	// End Of Pattern
 	    let elt = m.stack.peek(m.stack.base - 1);
 	    m.node = elt.node;
 	    m.pop_region();
-	    return M_Match;
+	    return M_Continue;
 	}
     }
 
@@ -478,6 +478,7 @@ class FuncPE extends UnsealedPE {
     constructor(func, ok_for_simple_arbno, need_pat) {
 	super(1, EOP, ok_for_simple_arbno);
 	this.func = func;
+	// true if node needs to be wrapped in pat() for image:
 	this.need_pat = need_pat || false;
 	this.seal();
     }
@@ -519,13 +520,13 @@ class PE_Func extends FuncPE {
 	    return M_Fail;
 	}
 	else if (is_pat(x)) {
-	    m.petrace(this, `function ${this.func} starting recursive match`);
+	    m.petrace(this, `function ${this.data()} starting recursive match`);
 	    if (!m.stack.room(x.stk))
 		error("pattern stack overflow");
 	    m.stack.put_node(m.stack.ptr + 1, this.pthen);
 	    m.push_region()
 	    m.node = x.p;
-	    return M_Match;
+	    return M_Continue;
 	}
 	else if (is_bool(x)) {
 	    m.petrace(this, `function ${this.func} returned ${x}`);
@@ -567,7 +568,7 @@ function sfv_to_pe(who, x) {
     else if (is_func(x))
 	return new PE_Func(x);
     else if (is_var(x))
-	return new PE_Func(x.getter); // TEMP
+	return new PE_Func(x.getter); // TEMP: need PE_Var
     else
 	uerror(`'${who}' needs String, Function, or Var`);
 }
@@ -689,10 +690,9 @@ const CP_R_Restore = new PE_R_Restore();
 ////////////////
 // Unanchored match helper
 
-class PE_Unanchored extends UnsealedPE { // Unanchored movement
+class PE_Unanchored extends PE { // Unanchored movement
     constructor(node) {
 	super(0, node, false);
-	this.seal();
     }
 
     match(m) {
@@ -740,7 +740,7 @@ function pe_conc(l, r, incr) {
     for (let p of l.ref_array()) {
 	p.index += r.index;
 
-	if (p instanceof PE_Arbno_Y)
+	if (p instanceof PE_Arbno_Y) // OOF!
 	    p.n += incr;
 
 	if (p.pthen === EOP)
@@ -835,7 +835,8 @@ class Match {
 		    this.trace("    failed");
 		break;
 	    }
-	    case M_Match:
+	    case M_Continue:	// node changed, continue
+		this.trace("    continue");
 		break;
 	    case M_Pattern_Success:
 		this.trace("match succeeded");
@@ -864,7 +865,7 @@ class Match {
 		this.trace("match failed");
 		return false;
 	    }
-	}
+	} // while this.node
 	error("null PE node");
     } // match
 
@@ -969,7 +970,7 @@ function print_nodes(refs) {
 function print_dot(refs) {
     console.log('strict digraph foo {');
     console.log('    node [shape=box];');
-    //console.log('    rankdir=LR;');
+    // XXX try to force samerank on previously unplaced nodes by following pthen?
     for (let r of refs)
 	console.log(`    n${r.index} [label="${r.index}: ${r.constructor.name}"]`)
     
@@ -1115,9 +1116,8 @@ class Pattern {		// primative pattern
 	for (let i = 0; i < arguments.length; i++) {
 	    let r = arguments[i];
 	    if (is_str(r) || is_func(r)) {
-		// XXX handle function returning pattern??
 		lp = pe_conc(lp.copy(), sfv_to_pe('and', r), 0);
-		// no chnge to lstk
+		// no chnge to lstk?? what about func???
 	    }
 	    else if (is_pat(r)) {
 		let rc = r.p.copy();
@@ -1150,15 +1150,15 @@ class Pattern {		// primative pattern
 	return new Pattern(lstk, lp);
     }
 
-    imm(x) {
+    imm(x) {			// assign/call immediately
 	// +---+     +---+     +---+
 	// | E |---->| P |---->| A |---->
 	// +---+     +---+     +---+
 
 	// The node numbering of the constituent pattern P is not affected.
 	// Where N is the number of nodes in P,
-	// the A node is numbered N + 1,
-	// and the E node is N + 2.
+	// the A node is N + 1,
+	// the E node is N + 2.
 	const e   = new PE_R_Enter();
 	const pat = this.p.copy();
 	let a;
@@ -1171,15 +1171,15 @@ class Pattern {		// primative pattern
 	return new Pattern(this.stk + 3, bracket(e, pat, a));
     }
 
-    onmatch(x) {
+    onmatch(x) {		// assign/call on pattern match
 	// +---+     +---+     +---+
 	// | E |---->| P |---->| C |---->
 	// +---+     +---+     +---+
 
 	// The node numbering of the constituent pattern P is not affected.
 	// Where N is the number of nodes in P,
-	// the C node is numbered N + 1,
-	// and the E node is N + 2.
+	// the C node is N + 1,
+	// the E node is N + 2.
 
 	const e   = new PE_R_Enter();
 	const pat = this.p.copy();
@@ -1191,8 +1191,6 @@ class Pattern {		// primative pattern
 	else
 	    need_fv('onmatch');
 	return new Pattern(this.stk + 3, bracket(e, pat, a));
-    
-	return new Pattern(this.stk + 3, bracket(e, pat, c));
     }
 
     toString() {
@@ -1309,18 +1307,24 @@ function set2str(cset) {
 
 //////////////// alternate (or)
 
-class PE_Alt extends UnsealedPE {
+class AltPE extends UnsealedPE {
     constructor(index, pthen, alt) {
 	super(index, pthen, false, true); // has_alt
 	this.alt = alt;
 	this.seal();
+    }
+}
+
+class PE_Alt extends AltPE {
+    constructor(index, pthen, alt) {
+	super(index, pthen, alt);
     }
 
     match(m) {
 	m.petrace(this, `setting up alternative ${this.alt.index}`);
 	m.push(this.alt);
 	m.node = this.pthen;
-	return M_Match;
+	return M_Continue;
     }
 
     inext() {
@@ -1386,14 +1390,16 @@ function pe_alt(l, r) {
 // class for match-time variable.
 // pass to .imm/.onmatch or (not)any, break(p|x), (n)span
 // (not (yet) supported for .cursor or (r)(tab|pos), len)
+let vnum = 1;
+
 class Var {
     constructor(name, value) {
 	if (!name)
 	    name = `var${vnum++}`;
 	this.name = name
 	this.value = value
+	// XXX temporary crock, need to clone all the node types!
 	this.getter = () => this.get();
-	this.setter = (value) => this.set(value);
     }
 
     get() {
@@ -1506,20 +1512,15 @@ class PE_Any_Func extends FuncPE {
 //   | Y |---->
 //   +---+
 
-// The PC_Arb_X element is numbered 2, and the PC_Arb_Y element is 1
+// The PC_Arb_X element is 2,
+// the PC_Arb_Y element is 1
 
-class PE_Arb_X extends UnsealedPE {	// arb (initial match)
-    constructor(index, pthen, alt) {    
-	super(index, pthen, false, true); // has_alt
-	this.alt = alt;
-	this.seal();
-    }
-
+class PE_Arb_X extends AltPE {	// arb (initial match)
     match(m) {
 	m.petrace(this, "matching arb");
 	m.push(this.alt);
 	m.node = this.pthen;
-	return M_Match;
+	return M_Continue;
     }
 
     image(ic) {
@@ -1527,10 +1528,9 @@ class PE_Arb_X extends UnsealedPE {	// arb (initial match)
     }
 }
 
-class PE_Arb_Y extends UnsealedPE {	// arb (extension)
+class PE_Arb_Y extends PE {	// arb (extension)
     constructor(index, pthen) {
 	super(index, pthen);
-	this.seal();
     }
 
     match(m) {
@@ -1663,24 +1663,20 @@ class PE_Arb_Y extends UnsealedPE {	// arb (extension)
 // before proceeding after matching each new instance.
 
 // The node numbering of the constituent pattern P is not affected.
-// Where N is the number of nodes in P, the Y node is numbered N + 1,
-// the E node is N + 2, and the X node is N + 3.
+// Where N is the number of nodes in P,
+// the Y node is N + 1,
+// the E node is N + 2,
+// the X node is N + 3.
 
 
 // This is the node that initiates
 // the match of a simple Arbno structure
-class PE_Arbno_S extends UnsealedPE {	// Arbno_S (simple Arbno initialize)
-    constructor(index, pthen, alt) {
-	super(index, pthen, false, true); // has_alt
-	this.alt = alt;
-	this.seal();
-    }
-
+class PE_Arbno_S extends AltPE { // Arbno_S (simple Arbno initialize)
     match(m) {
 	m.petrace(this, `setting up arbno alternative ${this.alt.index}`);
 	m.push(this.alt);
 	m.node = this.pthen;
-	return M_Match;
+	return M_Continue;
     }
 
     image(ic) {
@@ -1699,18 +1695,12 @@ function _arbno_simple(p) {
 
 // This is the node that initiates
 // the match of a complex Arbno structure.
-class PE_Arbno_X extends UnsealedPE {	// Arbno_X (Arbno initialize)
-    constructor(index, pthen, alt) {
-	super(index, pthen, false, true); // has_alt
-	this.alt = alt;
-	this.seal();
-    }
-
+class PE_Arbno_X extends AltPE {	// Arbno_X (Arbno initialize)
     match(m) {
 	m.petrace(this, `setting up arbno alternative ${this.alt.index}`);
 	m.push(this.alt);
 	m.node = this.pthen;
-	return M_Match;
+	return M_Continue;
     }
 
     image(ic) {
@@ -1747,10 +1737,8 @@ class PE_Arbno_Y extends UnsealedPE {	// Arbno_Y (Arbno rematch)
 	// the Arbno pattern that is matched. The Nat field of a
 	// PC_Arbno pattern contains the maximum stack entries needed
 	// for the Arbno with one instance and the successor pattern
-	if ((stk.ptr + this.n) >= stk.last) {
+	if ((stk.ptr + this.n) >= stk.last)
 	    error("pattern stack overflow");
-	    return M_Pattern_Fail;
-	}
 	return M_Succeed;
     }
 
@@ -1761,6 +1749,7 @@ class PE_Arbno_Y extends UnsealedPE {	// Arbno_Y (Arbno rematch)
 
 // used by arbno and assignment
 function bracket(e, p, a) {
+    // e is always PE_R_Enter?
     if (p === EOP) {
 	e.pthen = a;
 	e.index = 2;
@@ -1778,7 +1767,7 @@ function bracket(e, p, a) {
 /*export*/ function arbno(p) {
     let pe;
     let patstk;
-    if (is_str(p)) {
+    if (is_str(p)) {		// XXX || is_func || is_var??
 	pe = sfv_to_pe('arbno', p);
 	patstk = 0;
     }
@@ -1786,10 +1775,8 @@ function bracket(e, p, a) {
 	pe = p.p.copy();
 	patstk = p.stk;
     }
-    else {
-	// XXX allow Var, function returning pattern??
-	uerror("'arbno' need Pattern or String");
-    }
+    else
+	uerror("'arbno' needs Pattern or String");
     
     if (patstk === 0 && pe.ok_for_simple_arbno)
 	return new Pattern(0, _arbno_simple(pe));
@@ -1811,8 +1798,10 @@ function bracket(e, p, a) {
     // +---+     +---+     +---+
 
     // The node numbering of the constituent pattern P is not affected.
-    // Where N is the number of nodes in P, the Y node is numbered N + 1,
-    // the E node is N + 2, and the X node is N + 3.
+    // Where N is the number of nodes in P,
+    // the Y node is N + 1,
+    // the E node is N + 2,
+    // the X node is N + 3.
     const e = new PE_R_Enter();
     const x = new PE_Arbno_X(0, EOP, e);
     const y = new PE_Arbno_Y(0, x, patstk + 3);
@@ -1855,19 +1844,15 @@ class VarPE extends UnsealedPE {
     }
 
     data() {
-	return stringify(this.v);
+	return this.v.toString();
     }
 }
 
 class PE_Var_Imm extends VarPE {
-    constructor(v) {
-	super(v);
-    }
-
     match(m) {
 	let stk = m.stack;
 	let s = m.slice(stk.peek(stk.base - 1).cursor + 1, m.cursor);
-	m.petrace(this, `imm setting ${this.v.name} to ${LQ}${s}${RQ}`);
+	m.petrace(this, `imm setting var ${this.data()} to ${LQ}${s}${RQ}`);
 	// XXX register by name in m.vars object?
 	this.v.set(s);
 	m.pop_region();
@@ -1876,7 +1861,7 @@ class PE_Var_Imm extends VarPE {
 
     image(ic) {
 	// assert(!first)?
-	ic.append(`.imm(${this.v.toString()})`);
+	ic.append(`.imm(${this.data()})`);
     }
 }
 
@@ -1911,10 +1896,6 @@ class PE_Call_OnM extends FuncPE {
 
 // This node sets up for the eventual assignment
 class PE_Var_OnM extends VarPE {
-    constructor(v) {
-	super(v);
-    }
-
     match(m) {
 	m.petrace(this, "registering deferred assign");
 	m.stack.put_node(m.stack.base - 1, m.node);
@@ -1925,14 +1906,12 @@ class PE_Var_OnM extends VarPE {
     }	
 
     onmatch(m, str) {
-	m.trace(` setting ${this.v.name} to ${LQ}${str}${RQ}`);
-	// XXX register by v.name in m.vars object?
 	this.v.set(str);
     }
 
     image(ic) {
 	// assert(!first)?
-	ic.append(`.onmatch(${this.v.toString()})`);
+	ic.append(`.onmatch(${this.data()})`);
     }
 }
 
@@ -2089,7 +2068,7 @@ class PE_BreakX_X extends PE {
 
 // The B node is numbered 3,
 // the alternative node is 1,
-// and the X node is 2.
+// the X node is 2.
 
 /*export*/ function breakx(arg) { // Breakx Pattern
     let b = null;
@@ -2100,7 +2079,7 @@ class PE_BreakX_X extends PE {
     else if (is_func(arg))
 	b = new PE_BreakX_Func(3, arg);
     else if (is_var(x))
-	b = new PE_BreakX_Func(3, arg.getter);
+	b = new PE_BreakX_Func(3, arg.getter); // TEMP
     else
 	need_ssfv('breakx');
 
@@ -2112,7 +2091,7 @@ class PE_BreakX_X extends PE {
 
 //////////////// cursor
 
-class PE_Cursor extends FuncPE {    //  Cursor assignment
+class PE_Cursor_Func extends FuncPE {    //  Cursor assignment
     match(m) {
 	m.petrace(this, `calling ${this.data()} with cursor`);
 	this.func(m.cursor);
@@ -2124,22 +2103,29 @@ class PE_Cursor extends FuncPE {    //  Cursor assignment
     }
 }
 
+class PE_Cursor_Var extends VarPE {    //  Cursor assignment (var)
+    match(m) {
+	m.petrace(this, `setting ${this.data()} to cursor ${m.cursor}`);
+	this.v.set(m.cursor);
+	return M_Succeed;
+    }
+
+    name() {
+	return "cursor";
+    }
+}
+
 /*export*/ function cursor(x) {
     if (is_func(x))
-	return new Pattern(0, new PE_Cursor(x));
+	return new Pattern(0, new PE_Cursor_Func(x));
     if (is_var(x))
-	return new Pattern(0, new PE_Cursor(x.setter)); // TEMP
+	return new Pattern(0, new PE_Cursor_Var(x));
     need_fv('cursor');
 }
 
 //////////////// fail
 
-class PE_Fail extends UnsealedPE {	//  Fail
-    constructor() {
-    	super(1, EOP);
-	this.seal();
-    }
-
+class PE_Fail extends PE {	// Fail
     match(m) {
 	m.petrace(this, "matching fail");
 	return M_Fail;
@@ -2154,10 +2140,9 @@ class PE_Fail extends UnsealedPE {	//  Fail
 
 //////////////// fence (pattern)
 
-class PE_Fence extends UnsealedPE { // fence (built in pattern)
+class PE_Fence extends PE {	// fence (built in pattern)
     constructor() {
     	super(1, EOP);
-	this.seal();
     }
 
     match(m) {
@@ -2182,7 +2167,7 @@ class PE_Fence_X extends PE {
 	m.petrace(this, "matching fence function");
 	let stk = m.stack;
 	stk.ptr++;		// XXX check?  HIDE??
-	stk.put(stk.base, CP_Fence_Y);
+	stk.put(stk.ptr, stk.base, CP_Fence_Y);
 	stk.set_base(stk.peek(stk.base).cursor);
 	m.region_level--;
 	return M_Succeed;
@@ -2204,11 +2189,13 @@ class PE_Fence_Y extends PE {
 	// Note: the Cursor at this stage is actually the inner stack
 	// base value. We don't reset this, but we do use it to strip
 	// off all the entries made by the fenced pattern.
-	m.pematch(this, "pattern matched by fence caused failure");
+	m.petrace(this, "pattern matched by fence caused failure");
 	m.stack.ptr = m.cursor - 2; // XXX check! HIDE?
 	return M_Fail;
     }
 }
+
+const CP_Fence_Y = new PE_Fence_Y();
 
 //    +---+     +---+     +---+
 //    | E |---->| P |---->| X |---->
@@ -2216,8 +2203,8 @@ class PE_Fence_Y extends PE {
 
 // The node numbering of the constituent pattern P is not affected.
 // Where N is the number of nodes in P,
-// the X node is numbered N + 1,
-// and the E node is N + 2.
+// the X node is N + 1,
+// the E node is N + 2.
 
 /*export*/ function fencef(pat) {
     const e = new PE_R_Enter();
@@ -2265,12 +2252,12 @@ class PE_Len extends UnsealedPE { // len (integer case)
     }
 }
 
-class PC_Len_Func extends FuncPE { // len (function case)
+class PE_Len_Func extends FuncPE { // len (function case)
     match(m) {
 	let len = this.func();
+	m.petrace(this, `matching len (func) ${len}`);
 	if (!is_int(len) || len < 0)
 	    need_nni('len', len, this.func);
-	m.petrace(this, `matching len ${len}`);
 	if (m.cursor + len > m.length)
 	    return M_Fail;
 	m.cursor += len;
@@ -2295,7 +2282,7 @@ class PC_Len_Func extends FuncPE { // len (function case)
     else if (is_func(x))
 	return new Pattern(0, new PE_Len_Func(x));
     else if (is_var(x))
-	return new Pattern(0, new PE_Len_Func(x.getter));
+	return new Pattern(0, new PE_Len_Func(x.getter)); // TEMP
     uerror("'len' takes non-negative Number or Function");
 }
 
@@ -2426,9 +2413,9 @@ class PE_Pos_Int extends IntPE { // rpos(n)
 class PE_Pos_Func extends FuncPE { // pos(func)
     match(m) {
 	let n = this.func();
+	m.petrace(this, `matching rpos (func) ${n}`);
 	if (n < 0)
 	    uerror(`rpos function ${this.func} returned ${n}`);
-	m.petrace(this, `matching rpos (func) ${this.n}`);
 	if (m.cursor === n)
 	    return M_Succeed;
 	return M_Fail;
@@ -2467,9 +2454,9 @@ class PE_RPos_Int extends IntPE { // pos(n)
 class PE_RPos_Func extends FuncPE { // pos(func)
     match(m) {
 	let n = this.func();
+	m.petrace(this, `matching pos (func) ${n}`);
 	if (n < 0)
 	    uerror(`pos function ${this.func} returned ${n}`);
-	m.petrace(this, `matching pos (func) ${this.n}`);
 	if (m.cursor === m.length - n)
 	    return M_Succeed;
 	return M_Fail;
@@ -2510,9 +2497,9 @@ class PE_RTab_Int extends IntPE { // rtab(n)
 class PE_RTab_Func extends FuncPE { // rtab(func)
     match(m) {
 	let n = this.func();
+	m.petrace(this, `matching rtab (func) ${n}`);
 	if (n < 0)
 	    need_nni('rtab', n, this.func);
-	m.petrace(this, `matching rtab (func) ${this.n}`);
 	if (m.cursor <= m.length - n) {
 	    m.cursor = m.length - n;
 	    return M_Succeed;
@@ -2622,7 +2609,7 @@ class PE_Span_Func extends FuncPE {
 
 class PE_Succeed extends PE {	// succeed
     match(m) {
-	m.petrace(his, "matching 'succeed'");
+	m.petrace(this, "matching 'succeed'");
 	m.push(this);
 	return M_Succeed;
     }
@@ -2654,9 +2641,9 @@ class PE_Tab_Int extends IntPE { // tab(n)
 class PE_Tab_Func extends FuncPE { // tab(func)
     match(m) {
 	let n = this.func();
+	m.petrace(this, `matching tab (func) ${n}`);
 	if (n < 0)
 	    need_nni('tab', n, this.func);
-	m.petrace(this, `matching tab (func) ${this.n}`);
 	if (m.cursor <= n) {
 	    m.cursor = n;
 	    return M_Succeed;
