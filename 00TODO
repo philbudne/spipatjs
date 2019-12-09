@@ -6,14 +6,17 @@ XXX fix "or" imaging!
 XXX "inext()" should be called successor()?
 XXX document Var() object
 
-StackVar class?? only on "set"?
+Accept non-bool returns as truthy in PE_Func??  Only reject undefined??
+Accept undefined Var values as zero for (R)(Pos|Tab)|Len??
 'null' pattern variable?? PE_Null or PE_EOP??
 transfer more node documentation to spipat.js
 make print_{nodes,dot} Pattern methods??
 PE_((Not)Any|Break|(N)Span)_Func: display func value in "matching"
-add PE_((Not)Any|Break(x)|(N)Span|(R)(Pos|Tab)|Cursor|Len)_Var nodes
+add PE_((Not)Any|Break(x)|(N)Span|(R)(Pos|Tab)|Len)_Var nodes
+StackVar class?? only allow .set()?
 make Pattern class more opaque?
 top level and/or functions??
+add and/or methods to Var?
 handle arbno(Function|Var)?
 reuse C++ tests!!!
 reimplement stack using growable Array (push)
