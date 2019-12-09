@@ -1316,10 +1316,6 @@ class AltPE extends UnsealedPE {
 }
 
 class PE_Alt extends AltPE {
-    constructor(index, pthen, alt) {
-	super(index, pthen, alt);
-    }
-
     match(m) {
 	m.petrace(this, `setting up alternative ${this.alt.index}`);
 	m.push(this.alt);
