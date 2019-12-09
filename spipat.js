@@ -1458,7 +1458,7 @@ class PE_Any_Func extends FuncPE {
     }
 
     match(m) {
-	m.petrace(this, "matching any (func)");
+	m.petrace(this, "matching any (func)"); // XXX
 	let cs = this.func();
 	if (is_str(cs))
 	    cs = cset(cs)
@@ -1956,7 +1956,7 @@ class PE_Break_Set extends SetPE {
 
 class PE_Break_Func extends FuncPE {
     match(m) {
-	m.petrace(this, "matching break (func)");
+	m.petrace(this, "matching break (func)"); // XXX
 	let cs = this.func();
 	if (is_str(cs))
 	    cs = cset(cs)
@@ -2311,7 +2311,7 @@ class PE_NotAny_Func extends FuncPE {
 	else if (!is_set(cs))
 	    need_sf('notany', cs, this.func);
 
-	m.petrace(this, "matching notany (func)");
+	m.petrace(this, "matching notany (func)"); // XXX
 	if (m.cursor < m.length && !cs.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	    return M_Succeed;
@@ -2354,7 +2354,7 @@ class PE_NSpan_Set extends SetPE {
 
 class PE_NSpan_Func extends FuncPE {
     match(m) {
-	m.petrace(this, "matching nspan (func)");
+	m.petrace(this, "matching nspan (func)"); // XXX
 	let cs = this.func();
 	if (is_str(cs))
 	    cs = cset(cs)
@@ -2566,7 +2566,7 @@ class PE_Span_Func extends FuncPE {
 	    need_sf('nspan', cs, this.func);
 
 	let c = m.cursor;
-	m.petrace(this, "matching span (func)");
+	m.petrace(this, "matching span (func)"); // XXX
 	while (c < m.length && set.has(m.subject[c]))
 	    c++;
 	if (m.cursor !== c) {	// non-empty match?
