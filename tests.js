@@ -1,8 +1,8 @@
-// XXX test rem, pos, fence, fencef function, succeed
+// XXX test rem, pos, fence, fencef function, succeed, pat(Var)
 // XXX test backtrack w/ fail, abort, breakx
 // XXX test functions as arguments to and/or
 // XXX test (not)any, (n)span, break(p|x) w/ Var
-// XXX test test (r)(pos|tab) w/ Var (& function?)
+// XXX test test (r)(pos|tab) w/ Function, Var
 
 'use strict';
 
