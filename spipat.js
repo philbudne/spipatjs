@@ -255,9 +255,9 @@ class _PE {			// Pattern Element
 	return copy;
     }
 
-    //  Note: this procedure is not used by the normal concatenation circuit,
-    //  since other fixups are required on the left operand in this case, and
-    //  they might as well be done all together.
+    // Note: this procedure is not used by the normal concatenation circuit,
+    // since other fixups are required on the left operand in this case, and
+    // they might as well be done all together.
     set_successor(succ) {
 	for (let p of this.ref_array()) {
 	    if (p.pthen === EOP) {
@@ -335,8 +335,8 @@ class PE extends UnsealedPE {
 }
 
 class VarPE extends UnsealedPE {
-    constructor(v) {
-	super();
+    constructor(index, v, ok_for_simple_arbno) {
+	super(index, EOP, ok_for_simple_arbno);
 	this.no_and = true;	// want class member
 	this.v = v;
 	this.seal();
@@ -349,9 +349,9 @@ class VarPE extends UnsealedPE {
 
 //////////////// string
 
-//  Note, the following is not just an optimization, it is needed
-//  to ensure that arbno(len(0)) and arbno('') do not generate infinite
-//  matching loops (PE_Null is *NOT* safe_for_simple_arbno)!
+// Note, the following is not just an optimization, it is needed
+// to ensure that arbno(len(0)) and arbno('') do not generate infinite
+// matching loops (PE_Null is *NOT* safe_for_simple_arbno)!
 
 class PE_Null extends PE { // match zero length string
     match(m) {
@@ -487,6 +487,10 @@ class PE_String extends RunesPE {
 }
 
 class PE_Var extends VarPE {
+    constructor(v) {		// XXX Var1PE?
+	super(1, v);
+    }
+
     match(m) {
 	let str = this.v.get();
 	m.petrace(this, `matching ${LQ}${str}${RQ}`);
@@ -742,14 +746,14 @@ class PE_Unanchored extends PE { // Unanchored movement
 // Concat needs to traverse the left operand performing the following
 // set of fixups:
 
-//   a) Any successor pointers (Pthen fields) that are set to EOP are
-//      reset to point to the second operand.
+// a) Any successor pointers (Pthen fields) that are set to EOP are
+// reset to point to the second operand.
 
-//   b) Any PC_Arbno_Y node has its stack count field incremented
-//      by the parameter Incr provided for this purpose.
+// b) Any PC_Arbno_Y node has its stack count field incremented
+// by the parameter Incr provided for this purpose.
 
-//   d) Num fields of all pattern elements in the left operand are
-//      adjusted to include the elements of the right operand.
+// d) Num fields of all pattern elements in the left operand are
+// adjusted to include the elements of the right operand.
 
 // Note: we do not use Set_Successor in the processing for Concat, since
 // there is no point in doing two traversals, we may as well do everything
@@ -1443,6 +1447,7 @@ function pe_alt(l, r) {
 //////////////// any
 
 class SetPE extends UnsealedPE {
+    // NOTE: BreakX nodes are constructed with index > 1
     constructor(index, cset, ok_for_simple_arbno) {
 	super(index, EOP, ok_for_simple_arbno || false);
 	this.cset = cset;
@@ -1459,9 +1464,9 @@ class SetPE extends UnsealedPE {
     }
 }
 
-class PE_Any_Set extends SetPE {
-    constructor(index, cset) {
-	super(index, cset, true); // ok_for_simple_arbno
+class PE_Any_Set extends SetPE { // XXX Set1PE?
+    constructor(cset) {
+	super(1, cset, true); // ok_for_simple_arbno
     }
 
     match(m) {
@@ -1507,9 +1512,9 @@ class PE_Any_Func extends FuncPE {
 
 /*export*/ function any(x) {
     if (is_str(x))
-	return new Pattern(1, new PE_Any_Set(1, cset(x)));
+	return new Pattern(1, new PE_Any_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_Any_Set(1, x));
+	return new Pattern(1, new PE_Any_Set(x));
     else if (is_func(x))
 	return new Pattern(1, new PE_Any_Func(x));
     else if (is_var(x))
@@ -1520,14 +1525,14 @@ class PE_Any_Func extends FuncPE {
 
 //////////////// arb
 
-//   +---+
-//   | X |---->
-//   +---+
-//     .
-//     .
-//   +---+
-//   | Y |---->
-//   +---+
+// +---+
+// | X |---->
+// +---+
+//   .
+//   .
+// +---+
+// | Y |---->
+// +---+
 
 // The PC_Arb_X element is 2,
 // the PC_Arb_Y element is 1
@@ -1572,17 +1577,17 @@ class PE_Arb_Y extends PE {	// arb (extension)
 // not to make any history stack entries. In this case, arbno(P)
 // can construct the following structure:
 
-//     +-------------+
-//     |             ^
-//     V             |
-//   +---+           |
-//   | S |---->      |
-//   +---+           |
-//     .             |
-//     .             |
-//   +---+           |
-//   | P |---------->+
-//   +---+
+//   +-------------+
+//   |             ^
+//   V             |
+// +---+           |
+// | S |---->      |
+// +---+           |
+//   .             |
+//   .             |
+// +---+           |
+// | P |---------->+
+// +---+
 
 // The S (PC_Arbno_S) node matches null stacking a pointer to the
 // pattern P. If a subsequent failure causes P to be matched and
@@ -1600,17 +1605,17 @@ class PE_Arb_Y extends PE {	// arb (extension)
 // known to require a non-null string) and/or P requires pattern stack
 // entries, constructs the following structure:
 
-//     +--------------------------+
-//     |                          ^
-//     V                          |
-//   +---+                        |
-//   | X |---->                   |
-//   +---+                        |
-//     .                          |
-//     .                          |
-//   +---+     +---+     +---+    |
-//   | E |---->| P |---->| Y |--->+
-//   +---+     +---+     +---+
+//   +--------------------------+
+//   |                          ^
+//   V                          |
+// +---+                        |
+// | X |---->                   |
+// +---+                        |
+//   .                          |
+//   .                          |
+// +---+     +---+     +---+    |
+// | E |---->| P |---->| Y |--->+
+// +---+     +---+     +---+
 
 // The node X (PC_Arbno_X) matches null, stacking a pointer to the
 // E-P-X structure used to match one Arbno instance.
@@ -1626,15 +1631,15 @@ class PE_Arb_Y extends PE {	// arb (extension)
 // make history stack entries in the normal manner, so now the stack
 // looks like:
 
-//    (stack entries made before assign pattern)
+// (stack entries made before assign pattern)
 
-//    (Special entry, node field not used,
-//     used only to save initial cursor)
+// (Special entry, node field not used,
+// used only to save initial cursor)
 
-//    (PC_R_Remove entry, "cursor" value is (negative)  <-- Stack Base
-//     saved base value for the enclosing region)
+// (PC_R_Remove entry, "cursor" value is (negative)  <-- Stack Base
+// saved base value for the enclosing region)
 
-//    (stack entries made by matching P)
+// (stack entries made by matching P)
 
 // If the match of P fails, then the PC_R_Remove entry is popped and
 // it removes both itself and the special entry underneath it,
@@ -1647,18 +1652,18 @@ class PE_Arb_Y extends PE {	// arb (extension)
 // entry whose "cursor" value is the inner stack base value, and then
 // restore the outer stack base value, so the stack looks like:
 
-//    (stack entries made before assign pattern)
+// (stack entries made before assign pattern)
 
-//    (Special entry, node field not used,
-//     used only to save initial cursor)
+// (Special entry, node field not used,
+// used only to save initial cursor)
 
-//    (PC_R_Remove entry, "cursor" value is (negative)
-//     saved base value for the enclosing region)
+// (PC_R_Remove entry, "cursor" value is (negative)
+// saved base value for the enclosing region)
 
-//    (stack entries made by matching P)
+// (stack entries made by matching P)
 
-//    (PC_Region_Replace entry, "cursor" value is (negative)
-//     stack pointer value referencing the PC_R_Remove entry).
+// (PC_Region_Replace entry, "cursor" value is (negative)
+// stack pointer value referencing the PC_R_Remove entry).
 
 // Now that we have matched another instance of the Arbno pattern,
 // we need to move to the successor. There are two cases. If the
@@ -1853,6 +1858,10 @@ class PE_Call_Imm extends FuncPE {
 }
 
 class PE_Var_Imm extends VarPE {
+    constructor(v) {		// Var1PE??
+	super(1, v);
+    }
+
     match(m) {
 	let stk = m.stack;
 	let s = m.slice(stk.peek(stk.base - 1).cursor + 1, m.cursor);
@@ -1900,6 +1909,10 @@ class PE_Call_OnM extends FuncPE {
 
 // This node sets up for the eventual assignment
 class PE_Var_OnM extends VarPE {
+    constructor(v) {		// XXX Var1PE??
+	super(1, v);
+    }
+
     match(m) {
 	m.petrace(this, "registering deferred assign");
 	m.stack.put_node(m.stack.base - 1, m.node);
@@ -1921,7 +1934,7 @@ class PE_Var_OnM extends VarPE {
 
 //////////////// bal
 
-class PE_Bal extends PE {	//  Bal
+class PE_Bal extends PE {	// Bal
     match(m) {
 	m.petrace(this, "matching or extending bal");
 	if (m.cursor >= m.length || m.subject[m.cursor] === ')')
@@ -2024,7 +2037,7 @@ class PE_BreakX_Set extends SetPE { // breakx (character set case)
     }
 }
 
-class PE_BreakX_Func extends FuncPE { //  breakx (function case)
+class PE_BreakX_Func extends FuncPE { // breakx (function case)
     match(m) {
 	let cs = this.func();
 	if (is_str(cs)) {
@@ -2095,7 +2108,7 @@ class PE_BreakX_X extends PE {
 
 //////////////// cursor
 
-class PE_Cursor_Func extends FuncPE {    //  Cursor assignment
+class PE_Cursor_Func extends FuncPE {    // Cursor assignment
     match(m) {
 	m.petrace(this, `calling ${this.data()} with cursor`);
 	this.func(m.cursor);
@@ -2107,7 +2120,11 @@ class PE_Cursor_Func extends FuncPE {    //  Cursor assignment
     }
 }
 
-class PE_Cursor_Var extends VarPE {    //  Cursor assignment (var)
+class PE_Cursor_Var extends VarPE {    // Cursor assignment (var)
+    constructor(v) {		       // XXX Var1PE?
+	super(1, v);
+    }
+
     match(m) {
 	m.petrace(this, `setting ${this.data()} to cursor ${m.cursor}`);
 	this.v.set(m.cursor);
@@ -2201,9 +2218,9 @@ class PE_Fence_Y extends PE {
 
 const CP_Fence_Y = new PE_Fence_Y();
 
-//    +---+     +---+     +---+
-//    | E |---->| P |---->| X |---->
-//    +---+     +---+     +---+
+// +---+     +---+     +---+
+// | E |---->| P |---->| X |---->
+// +---+     +---+     +---+
 
 // The node numbering of the constituent pattern P is not affected.
 // Where N is the number of nodes in P,
@@ -2275,9 +2292,9 @@ class PE_Len_Func extends FuncPE { // len (function case)
 
 /*export*/ function len(x) {
     if (is_int(x)) {
-	//  Note, the following is not just an optimization, it is needed
-	//  to ensure that Arbno (Len (0)) does not generate an infinite
-	//  matching loop (since PC_Len is ok_for_simple_arbno).
+	// Note, the following is not just an optimization, it is needed
+	// to ensure that Arbno (Len (0)) does not generate an infinite
+	// matching loop (since PC_Len is ok_for_simple_arbno).
 	if (x === 0)
 	    return new Pattern(0, new PE_Null()); // not ok_for_simple_arbno
 	else if (x > 0)
@@ -2293,9 +2310,9 @@ class PE_Len_Func extends FuncPE { // len (function case)
 
 //////////////// notany
 
-class PE_NotAny_Set extends SetPE {
-    constructor(index, cset) {
-	super(index, cset, true); // ok_for_simple_arbno
+class PE_NotAny_Set extends SetPE { // XXX Set1PE
+    constructor(cset) {
+	super(1, cset, true); // ok_for_simple_arbno
     }
 
     match(m) {
@@ -2341,9 +2358,9 @@ class PE_NotAny_Func extends FuncPE {
 
 /*export*/ function notany(x) {
     if (is_str(x))
-	return new Pattern(1, new PE_NotAny_Set(1, cset(x)));
+	return new Pattern(1, new PE_NotAny_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_NotAny_Set(1, x));
+	return new Pattern(1, new PE_NotAny_Set(x));
     else if (is_func(x))
 	return new Pattern(1, new PE_NotAny_Func(x));
     else
@@ -2544,9 +2561,9 @@ class PE_Rem extends PE {	// Rem
 
 //////////////// span
 
-class PE_Span_Set extends SetPE {
-    constructor(index, cset) {
-	super(index, cset, true); // ok_for_simple_arbno
+class PE_Span_Set extends SetPE { // XXX Set1PE?
+    constructor(cset) {
+	super(1, cset, true); // ok_for_simple_arbno
     }
 
     match(m) {
@@ -2598,9 +2615,9 @@ class PE_Span_Func extends FuncPE {
 
 /*export*/ function span(x) {
     if (is_str(x))
-	return new Pattern(1, new PE_Span_Set(1, cset(x)));
+	return new Pattern(1, new PE_Span_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_Span_Set(1, x));
+	return new Pattern(1, new PE_Span_Set(x));
     else if (is_func(x))
 	return new Pattern(1, new PE_Span_Func(x));
     else if (is_var(x))
