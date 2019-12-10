@@ -1,14 +1,15 @@
-// XXX test rem, pos, fence, fencef function, succeed, pat(Var)
-// XXX test backtrack w/ fail, abort, breakx
-// XXX test functions as arguments to and/or
+// XXX test rem, pos, fence pat(Var)
+// XXX test backtrack w/ fail, abort, breakx -- split.js
+// XXX test functions, Vars as arguments to and/or
 // XXX test (not)any, (n)span, break(p|x) w/ Var
-// XXX test test (r)(pos|tab) w/ Function, Var
+// XXX test (r)(pos|tab) w/ Function, Var
+// XXX test arbno with string, function, variable
 
 'use strict';
 
 var spipat = require("./spipat.js");
 
-// UGH! nodejs 4.2.6 doesn't do import
+// UGH! nodejs 4.2.6 doesn't do import/export
 const abort = spipat.abort;
 const any = spipat.any;
 const arb = spipat.arb;
@@ -43,7 +44,7 @@ function get_caller(stack, n) {
     const trace = stack.split("\n");
     const str = trace[n];
 
-    // want breakx('(').and('(', break(')').onmatch(....))!!
+    // want breakx('(').and('(', break(')').onmatch(vx))!!
     return str.substring(str.lastIndexOf("(") + 1,
 			 str.lastIndexOf(")"));
 }
@@ -441,11 +442,21 @@ const imgpat4 = pat("7890").and("abcde").or(arb);
 imgcheck(imgpat4, 'pat("7890").and("abcde").or(arb)'); // XXX reversed
 
 // recursive pattern
-let recurse1 = pat('a').or(pat('b').and(() => recurse1));
+const recurse1 = pat('a').or(pat('b').and(() => recurse1));
 imgcheck(recurse1, 'pat("a").or(pat("b").and(() => recurse1))');
-check(recurse1.amatch('a'), 'a');
-check(recurse1.amatch('ba'), 'ba');
-check(recurse1.amatch('bbbba'), 'bbbba');
+check(recurse1.amatch('a', deb), 'a');
+check(recurse1.amatch('ba', deb), 'ba');
+check(recurse1.amatch('bbbba', deb), 'bbbba');
+
+const qvar = new Var('quote');
+const qstr1v = any('"' + "'").imm(qvar).and(breakp(qvar), pat(qvar)); // XXX direct var!!!
+//imgcheck(qstr1v, ''); // XXX BROKEN
+check(qstr1v.amatch("'abc'", deb), "'abc'");
+checkval(qvar.get(), "'");
+qvar.set('');
+checkval(qvar.get(), "");
+check(qstr1v.amatch('"abc"', deb), '"abc"');
+checkval(qvar.get(), '"');
 
 //================
 console.log(`${tests} tests: ${ok} ok`);

@@ -1,23 +1,26 @@
 TODO:
 
 figure out node.js/browser compatible module format!
+	use Babel???
 
 XXX fix "or" imaging!
+XXX fix qstr1v imaging!!
 XXX "inext()" should be called successor()?
 XXX document Var() object
 
+add PE_((R|'')(Pos|Tab))|Len)_Var nodes
+PE_((Not)Any|Break|(N)Span)_Func: display func value in "matching"
+PE_((Not)Any|Break|(N)Span)_Var: display var value in "matching"
 Accept non-bool returns as truthy in PE_Func??  Only reject undefined??
-Accept undefined Var values as zero for (R)(Pos|Tab)|Len??
-'null' pattern variable?? PE_Null or PE_EOP??
+'null' pattern variable?? PE_Null??
 transfer more node documentation to spipat.js
 make print_{nodes,dot} Pattern methods??
-PE_((Not)Any|Break|(N)Span)_Func: display func value in "matching"
-add PE_((Not)Any|Break(x)|(N)Span|(R)(Pos|Tab)|Len)_Var nodes
 StackVar class?? only allow .set()?
+StrVar vs IntVar?? or .getstr() vs .getint()???
 make Pattern class more opaque?
 top level and/or functions??
-add and/or methods to Var?
-handle arbno(Function|Var)?
+Accept undefined Var values as zero for (R)(Pos|Tab)|Len?? getint() method??
+add and/or methods to (Str)Var?
 reuse C++ tests!!!
 reimplement stack using growable Array (push)
 	would need to keep as negative values

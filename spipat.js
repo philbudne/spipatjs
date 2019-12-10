@@ -141,6 +141,11 @@ function need_sf(who, got, func) {
     throw new SpipatUserError(`'${who}' needs String or Set, got ${got} from ${func}`);
 }
 
+// from _Var matching functions
+function need_s(who, got, v) {
+    throw new SpipatUserError(`'${who}' needs String got ${got} from ${v.toString()}`);
+}
+
 function need_nnifv(who, n) {
     throw new SpipatUserError(`'${who}' needs non-negative integer, Function, or Var, got ${n}`);
 }
@@ -345,6 +350,10 @@ class VarPE extends UnsealedPE {
     data() {
 	return this.v.toString();
     }
+
+    image(ic) {
+	ic.append(`${this.name()}(${this.data()})`);
+    }
 }
 
 //////////////// string
@@ -489,11 +498,14 @@ class PE_String extends RunesPE {
 class PE_Var extends VarPE {
     constructor(v) {		// XXX Var1PE?
 	super(1, v);
+	this.need_pat = true;
     }
 
     match(m) {
 	let str = this.v.get();
 	m.petrace(this, `matching ${LQ}${str}${RQ}`);
+	if (!is_str(str))
+	    need_s('pat', str, this.v);
 	let runes = explode(str);
 	if ((m.length - m.cursor) >= runes.length) {
 	    for (let i = 0; i < runes.length; i++)
@@ -507,8 +519,8 @@ class PE_Var extends VarPE {
 }
 
 class FuncPE extends UnsealedPE {
-    constructor(func, ok_for_simple_arbno, need_pat) {
-	super(1, EOP, ok_for_simple_arbno);
+    constructor(index, func, ok_for_simple_arbno, need_pat) {
+	super(index, EOP, ok_for_simple_arbno);
 	this.func = func;
 	// true if node needs to be wrapped in pat() for image:
 	this.need_pat = need_pat || false;
@@ -530,8 +542,8 @@ class FuncPE extends UnsealedPE {
 // call func at match time, handles:
 // string, pattern, boolean
 class PE_Func extends FuncPE {
-    constructor(func) {
-	super(func, false, true); // need_pat
+    constructor(func) {		     // XXX Func1PE?
+	super(1, func, false, true); // need_pat
     }
 
     match(m) {
@@ -1464,9 +1476,9 @@ class SetPE extends UnsealedPE {
     }
 }
 
-class PE_Any_Set extends SetPE { // XXX Set1PE?
-    constructor(cset) {
-	super(1, cset, true); // ok_for_simple_arbno
+class PE_Any_Set extends SetPE {
+    constructor(cset) {		// XXX Set1PE?
+	super(1, cset, true);	// ok_for_simple_arbno
     }
 
     match(m) {
@@ -1484,9 +1496,33 @@ class PE_Any_Set extends SetPE { // XXX Set1PE?
     }
 }
 
+class PE_Any_Var extends VarPE {
+    constructor(v) {		// XXX Var1PE?
+	super(1, v, true);	// ok_for_simple_arbno
+    }
+
+    match(m) {
+	const str = this.v.get();
+	if (!is_str(str))
+	    need_s('any', str, this.v);
+	m.petrace(this, `matching any ${LQ}${str}${RQ}`);
+	const cs = cset(str);
+	if (m.cursor < m.length && cs.has(m.subject[m.cursor])) {
+	    m.cursor++;
+	    return M_Succeed;
+	}
+	else
+	    return M_Fail;
+    }
+
+    name() {
+	return "any";
+    }
+}
+
 class PE_Any_Func extends FuncPE {
-    constructor(func) {
-	super(func, true);	// ok_for_simple_arbno
+    constructor(func) {		// XXX Func1PE?
+	super(1, func, true);	// ok_for_simple_arbno
     }
 
     match(m) {
@@ -1515,10 +1551,10 @@ class PE_Any_Func extends FuncPE {
 	return new Pattern(1, new PE_Any_Set(cset(x)));
     else if (is_set(x))
 	return new Pattern(1, new PE_Any_Set(x));
+    else if (is_var(x))
+	return new Pattern(1, new PE_Any_Var(x));
     else if (is_func(x))
 	return new Pattern(1, new PE_Any_Func(x));
-    else if (is_var(x))
-	return new Pattern(1, new PE_Any_Func(x.getter)); // TEMP!
     else
 	need_ssfv('any');
 }
@@ -1789,16 +1825,14 @@ function bracket(e, p, a) {
 /*export*/ function arbno(p) {
     let pe;
     let patstk;
-    if (is_str(p)) {		// XXX || is_func || is_var??
-	pe = sfv_to_pe('arbno', p);
-	patstk = 0;
-    }
-    else if (is_pat(p)) {
+    if (is_pat(p)) {
 	pe = p.p.copy();
 	patstk = p.stk;
     }
-    else
-	uerror("'arbno' needs Pattern or String");
+    else {
+	pe = sfv_to_pe('arbno', p); // XXX error won't mention Pattern!
+	patstk = 0;
+    }
     
     if (patstk === 0 && pe.ok_for_simple_arbno)
 	return new Pattern(0, _arbno_simple(pe));
@@ -1837,14 +1871,14 @@ function bracket(e, p, a) {
 //////////////// assign immediate
 
 class PE_Call_Imm extends FuncPE {
-    constructor(func) {
-	super(func);
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
 	this.no_and = true;	// want class member
     }
 
     match(m) {
 	let stk = m.stack;
-	let s = m.slice(stk.peek(stk.base - 1).cursor + 1, m.cursor);
+	const s = m.slice(stk.peek(stk.base - 1).cursor + 1, m.cursor);
 	m.petrace(this, `imm calling ${this.data()} with ${LQ}${s}${RQ}`);
 	this.func(s);
 	m.pop_region();
@@ -1858,7 +1892,7 @@ class PE_Call_Imm extends FuncPE {
 }
 
 class PE_Var_Imm extends VarPE {
-    constructor(v) {		// Var1PE??
+    constructor(v) {		// XXX Var1PE??
 	super(1, v);
     }
 
@@ -1883,7 +1917,7 @@ class PE_Var_Imm extends VarPE {
 // This node sets up for the eventual assignment
 class PE_Call_OnM extends FuncPE {
     constructor(func) {
-	super(func);
+	super(1, func);		// XXX Func1PE?
 	this.no_and = true;	// want class member
     }
 
@@ -1968,6 +2002,10 @@ class PE_Bal extends PE {	// Bal
 //////////////// break
 
 class PE_Break_Set extends SetPE {
+    constructor(cset) {		// XXX Set1PE?
+	super(1, cset);
+    }
+
     match(m) {
 	m.petrace(this, `matching break ${LQ}${this.str}${RQ}`);
 	while (m.cursor < m.length && !this.cset.has(m.subject[m.cursor])) {
@@ -1981,7 +2019,33 @@ class PE_Break_Set extends SetPE {
     }
 }
 
+class PE_Break_Var extends VarPE {
+    constructor(v) {		// XXX Var1PE?
+	super(1, v);
+    }
+
+    match(m) {
+	const str = this.v.get();
+	if (!is_str(str))
+	    need_s('breakp', str, this.v);
+	m.petrace(this, `matching break ${LQ}${str}${RQ}`);
+	const cs = cset(str);
+	while (m.cursor < m.length && !cs.has(m.subject[m.cursor])) {
+	    m.cursor++;
+	}
+	return M_Succeed;
+    }
+
+    name() {
+	return "breakp";
+    }
+}
+
 class PE_Break_Func extends FuncPE {
+    constructor(v) {		// XXX Func1PE?
+	super(1, v);
+    }
+
     match(m) {
 	m.petrace(this, "matching break (func)"); // XXX
 	let cs = this.func();
@@ -2004,13 +2068,13 @@ class PE_Break_Func extends FuncPE {
 
 /*export*/ function breakp(x) {	// Break Pattern
     if (is_str(x))
-	return new Pattern(1, new PE_Break_Set(1, cset(x)));
+	return new Pattern(1, new PE_Break_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_Break_Set(1, x));
+	return new Pattern(1, new PE_Break_Set(x));
+    else if (is_var(x))
+	return new Pattern(1, new PE_Break_Var(x));
     else if (is_func(x))
 	return new Pattern(1, new PE_Break_Func(x));
-    else if (is_var(x))
-	return new Pattern(1, new PE_Break_Func(x.getter)); // TEMP
     else
 	need_ssfv('breakp');
 }
@@ -2037,6 +2101,30 @@ class PE_BreakX_Set extends SetPE { // breakx (character set case)
     }
 }
 
+class PE_BreakX_Var extends VarPE { // breakx (var case)
+    match(m) {
+	const str = this.v.get();
+	if (!is_str(str))
+	    need_s('breakx', str, this.v);
+	m.petrace(this, `matching breakx ${LQ}${str}${RQ}`);
+	const cs = cset(str);
+	while (m.cursor < m.length) {
+	    if (cs.has(m.subject[m.cursor]))
+		return M_Succeed;
+	    m.cursor++;
+	}
+	return M_Fail;
+    }
+
+    name() {
+	return "breakx";
+    }
+
+    inext() {
+	return super.inext().pthen; // skip PE_Alt
+    }
+}
+
 class PE_BreakX_Func extends FuncPE { // breakx (function case)
     match(m) {
 	let cs = this.func();
@@ -2045,7 +2133,7 @@ class PE_BreakX_Func extends FuncPE { // breakx (function case)
 	    cs = cset(cs)
 	}
 	else if (is_set(cs))
-	    m.petrace(this, `matching breakx ${LQ}${cs}${RQ}`);
+	    m.petrace(this, `matching breakx ${LQ}${cs}${RQ}`); // XXX
 	else
 	    need_sf('breakx', cs, this.func);
 
@@ -2093,10 +2181,10 @@ class PE_BreakX_X extends PE {
 	b = new PE_BreakX_Set(3, cset(arg));
     else if (is_set(arg))
 	b = new PE_BreakX_Set(3, arg);
+    else if (is_var(x))
+	b = new PE_BreakX_Var(3, arg);
     else if (is_func(arg))
 	b = new PE_BreakX_Func(3, arg);
-    else if (is_var(x))
-	b = new PE_BreakX_Func(3, arg.getter); // TEMP
     else
 	need_ssfv('breakx');
 
@@ -2109,6 +2197,10 @@ class PE_BreakX_X extends PE {
 //////////////// cursor
 
 class PE_Cursor_Func extends FuncPE {    // Cursor assignment
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
+    }
+
     match(m) {
 	m.petrace(this, `calling ${this.data()} with cursor`);
 	this.func(m.cursor);
@@ -2126,7 +2218,7 @@ class PE_Cursor_Var extends VarPE {    // Cursor assignment (var)
     }
 
     match(m) {
-	m.petrace(this, `setting ${this.data()} to cursor ${m.cursor}`);
+	m.petrace(this, `setting ${this.data()} to ${m.cursor}`);
 	this.v.set(m.cursor);
 	return M_Succeed;
     }
@@ -2274,6 +2366,10 @@ class PE_Len extends UnsealedPE { // len (integer case)
 }
 
 class PE_Len_Func extends FuncPE { // len (function case)
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
+    }
+
     match(m) {
 	let len = this.func();
 	m.petrace(this, `matching len (func) ${len}`);
@@ -2310,9 +2406,9 @@ class PE_Len_Func extends FuncPE { // len (function case)
 
 //////////////// notany
 
-class PE_NotAny_Set extends SetPE { // XXX Set1PE
-    constructor(cset) {
-	super(1, cset, true); // ok_for_simple_arbno
+class PE_NotAny_Set extends SetPE {
+    constructor(cset) {		// XXX Set1PE
+	super(1, cset, true);	// ok_for_simple_arbno
     }
 
     match(m) {
@@ -2330,9 +2426,33 @@ class PE_NotAny_Set extends SetPE { // XXX Set1PE
     }
 }
 
+class PE_NotAny_Var extends VarPE {
+    constructor(v) {		// XXX Var1PE
+	super(1, v, true);	// ok_for_simple_arbno
+    }
+
+    match(m) {
+	const str = this.v.get();
+	if (!is_str(str))
+	    need_s('notany', str, this.v);
+	m.petrace(this, `matching notany ${LQ}${str}${RQ}`);
+	const cs = cset(str);
+	if (m.cursor < m.length && !cs.has(m.subject[m.cursor])) {
+	    m.cursor++;
+	    return M_Succeed;
+	}
+	else
+	    return M_Fail;
+    }
+
+    name() {
+	return "notany";
+    }
+}
+
 class PE_NotAny_Func extends FuncPE {
-    constructor(func) {
-	super(func, true);	// ok_for_simple_arbno
+    constructor(func) {		// XXX Func1PE?
+	super(1, func, true);	// ok_for_simple_arbno
     }
 
     match(m) {
@@ -2361,6 +2481,8 @@ class PE_NotAny_Func extends FuncPE {
 	return new Pattern(1, new PE_NotAny_Set(cset(x)));
     else if (is_set(x))
 	return new Pattern(1, new PE_NotAny_Set(x));
+    else if (is_var(x))
+	return new Pattern(1, new PE_NotAny_Var(x));
     else if (is_func(x))
 	return new Pattern(1, new PE_NotAny_Func(x));
     else
@@ -2370,6 +2492,10 @@ class PE_NotAny_Func extends FuncPE {
 //////////////// nspan (possibly null)
 
 class PE_NSpan_Set extends SetPE {
+    constructor(cset) {		// XXX Set1PE
+	super(1, cset);
+    }
+
     match(m) {
 	m.petrace(this, `matching nspan ${LQ}${this.str}${RQ}`);
 	while (m.cursor < m.length && this.cset.has(m.subject[m.cursor])) {
@@ -2383,7 +2509,33 @@ class PE_NSpan_Set extends SetPE {
     }
 }
 
+class PE_NSpan_Var extends VarPE {
+    constructor(v) {		// XXX Var1PE?
+	super(1, v);
+    }
+
+    match(m) {
+	const str = this.v.get();
+	if (!is_str(str))
+	    need_s('nspan', str, this.v);
+	m.petrace(this, `matching nspan ${LQ}${str}${RQ}`);
+	const cs = cset(str);
+	while (m.cursor < m.length && cs.has(m.subject[m.cursor])) {
+	    m.cursor++;
+	}
+	return M_Succeed;
+    }
+
+    name() {
+	return "nspan";
+    }
+}
+
 class PE_NSpan_Func extends FuncPE {
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
+    }
+
     match(m) {
 	m.petrace(this, "matching nspan (func)"); // XXX
 	let cs = this.func();
@@ -2405,13 +2557,13 @@ class PE_NSpan_Func extends FuncPE {
 
 /*export*/ function nspan(x) {
     if (is_str(x))
-	return new Pattern(1, new PE_NSpan_Set(1, cset(x)));
+	return new Pattern(1, new PE_NSpan_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_NSpan_Set(1, x));
+	return new Pattern(1, new PE_NSpan_Set(x));
+    else if (is_var(x))
+	return new Pattern(1, new PE_NSpan_Var(x));
     else if (is_func(x))
 	return new Pattern(1, new PE_NSpan_Func(x));
-    else if (is_var(x))
-	return new Pattern(1, new PE_NSpan_Func(x.getter)); // TEMP
     else
 	need_ssfv('nspan');
 }
@@ -2432,6 +2584,10 @@ class PE_Pos_Int extends IntPE { // rpos(n)
 }
 
 class PE_Pos_Func extends FuncPE { // pos(func)
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
+    }
+
     match(m) {
 	let n = this.func();
 	m.petrace(this, `matching rpos (func) ${n}`);
@@ -2473,6 +2629,10 @@ class PE_RPos_Int extends IntPE { // pos(n)
 }
 
 class PE_RPos_Func extends FuncPE { // pos(func)
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
+    }
+
     match(m) {
 	let n = this.func();
 	m.petrace(this, `matching pos (func) ${n}`);
@@ -2516,6 +2676,10 @@ class PE_RTab_Int extends IntPE { // rtab(n)
 }
 
 class PE_RTab_Func extends FuncPE { // rtab(func)
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
+    }
+
     match(m) {
 	let n = this.func();
 	m.petrace(this, `matching rtab (func) ${n}`);
@@ -2584,9 +2748,36 @@ class PE_Span_Set extends SetPE { // XXX Set1PE?
     }
 }
 
+class PE_Span_Var extends VarPE {
+    constructor(v) {		// XXX Var1PE?
+	super(1, v, true);	// ok_for_simple_arbno
+    }
+
+    match(m) {
+	const str = this.v.get();
+	m.petrace(this, "matching span (var)"); // XXX
+	if (!is_str(str))
+	    need_s('span', str, this.v);
+	const cs = cset(str);
+	let c = m.cursor;
+	while (c < m.length && cs.has(m.subject[c]))
+	    c++;
+	if (m.cursor !== c) {	// non-empty match?
+	    m.cursor = c;	// move cursor
+	    return M_Succeed;
+	}
+	else
+	    return M_Fail;
+    }
+
+    name() {
+	return "span";
+    }
+}
+
 class PE_Span_Func extends FuncPE {
-    constructor(func) {
-	super(func, true);	// ok_for_simple_arbno
+    constructor(func) {		// XXX Func1PE?
+	super(1, func, true);	// ok_for_simple_arbno
     }
 
     match(m) {
@@ -2594,7 +2785,7 @@ class PE_Span_Func extends FuncPE {
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
-	    need_sf('nspan', cs, this.func);
+	    need_sf('span', cs, this.func);
 
 	let c = m.cursor;
 	m.petrace(this, "matching span (func)"); // XXX
@@ -2618,10 +2809,10 @@ class PE_Span_Func extends FuncPE {
 	return new Pattern(1, new PE_Span_Set(cset(x)));
     else if (is_set(x))
 	return new Pattern(1, new PE_Span_Set(x));
+    else if (is_var(x))
+	return new Pattern(1, new PE_Span_Var(x));
     else if (is_func(x))
 	return new Pattern(1, new PE_Span_Func(x));
-    else if (is_var(x))
-	return new Pattern(1, new PE_Span_Func(x.getter)); // TEMP
     else
 	need_ssfv('span');
 }
@@ -2660,6 +2851,10 @@ class PE_Tab_Int extends IntPE { // tab(n)
 }
 
 class PE_Tab_Func extends FuncPE { // tab(func)
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
+    }
+
     match(m) {
 	let n = this.func();
 	m.petrace(this, `matching tab (func) ${n}`);
