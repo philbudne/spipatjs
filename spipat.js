@@ -141,8 +141,8 @@ function need_sf(who, got, func) {
     throw new SpipatUserError(`'${who}' needs String or Set, got ${got} from ${func}`);
 }
 
-function need_nnif(who, n) {
-    throw new SpipatUserError(`'${who}' needs non-negative integer or Function, got ${n}`);
+function need_nnifv(who, n) {
+    throw new SpipatUserError(`'${who}' needs non-negative integer, Function, or Var, got ${n}`);
 }
 
 function need_nni(who, n, func) {
@@ -334,6 +334,19 @@ class PE extends UnsealedPE {
     }
 }
 
+class VarPE extends UnsealedPE {
+    constructor(v) {
+	super();
+	this.no_and = true;	// want class member
+	this.v = v;
+	this.seal();
+    }
+
+    data() {
+	return this.v.toString();
+    }
+}
+
 //////////////// string
 
 //  Note, the following is not just an optimization, it is needed
@@ -463,12 +476,26 @@ class PE_String extends RunesPE {
     match(m) {
 	m.petrace(this, `matching ${LQ}${this.str}${RQ}`);
 	if ((m.length - m.cursor) >= this.length) {
-	    for (let i = 0; i < this.length; i++) {
-		if (m.subject[m.cursor + i] !== this.runes[i]) {
+	    for (let i = 0; i < this.length; i++)
+		if (m.subject[m.cursor + i] !== this.runes[i])
 		    return M_Fail;
-		}
-	    }
 	    m.cursor += this.runes.length;
+	    return M_Succeed;
+	}
+	return M_Fail;
+    }
+}
+
+class PE_Var extends VarPE {
+    match(m) {
+	let str = this.v.get();
+	m.petrace(this, `matching ${LQ}${str}${RQ}`);
+	let runes = explode(str);
+	if ((m.length - m.cursor) >= runes.length) {
+	    for (let i = 0; i < runes.length; i++)
+		if (m.subject[m.cursor + i] !== runes[i])
+		    return M_Fail;
+	    m.cursor += runes.length;
 	    return M_Succeed;
 	}
 	return M_Fail;
@@ -529,15 +556,15 @@ class PE_Func extends FuncPE {
 	    m.node = x.p;
 	    return M_Continue;
 	}
-	else if (is_bool(x)) {
-	    m.petrace(this, `function ${this.func} returned ${x}`);
+	else if (is_bool(x) || is_int(x)) {
+	    m.petrace(this, `function ${this.data()} returned ${x}`);
 	    if (x)
 		return M_Succeed;
 	    else
 		return M_Fail;
 	}
 	else {
-	    uerror(`need String, Pattern or Boolean from ${this.func}`);
+	    uerror(`need String, Pattern, integer, or Boolean from ${this.data()}`);
 	}
     }
 
@@ -569,7 +596,7 @@ function sfv_to_pe(who, x) {
     else if (is_func(x))
 	return new PE_Func(x);
     else if (is_var(x))
-	return new PE_Func(x.getter); // TEMP: need PE_Var
+	return new PE_Var(x);
     else
 	uerror(`'${who}' needs String, Function, or Var`);
 }
@@ -1825,19 +1852,6 @@ class PE_Call_Imm extends FuncPE {
     }
 }
 
-class VarPE extends UnsealedPE {
-    constructor(v) {
-	super();
-	this.no_and = true;	// want class member
-	this.v = v;
-	this.seal();
-    }
-
-    data() {
-	return this.v.toString();
-    }
-}
-
 class PE_Var_Imm extends VarPE {
     match(m) {
 	let stk = m.stack;
@@ -2023,7 +2037,7 @@ class PE_BreakX_Func extends FuncPE { //  breakx (function case)
 	    need_sf('breakx', cs, this.func);
 
 	while (m.cursor < m.length) {
-	    if (cs.has(subject[m.cursor]))
+	    if (cs.has(m.subject[m.cursor]))
 		return M_Succeed;
 	    m.cursor++;
 	}
@@ -2423,7 +2437,7 @@ class PE_Pos_Func extends FuncPE { // pos(func)
 	return new Pattern(0, new PE_Pos_Func(n.getter)); // TEMP
     if (is_int(n) && n >= 0)
 	return new Pattern(0, new PE_Pos_Int(n));
-    need_nnif('pos', n);
+    need_nnifv('pos', n);
 }
 
 //////////////// rpos
@@ -2464,7 +2478,7 @@ class PE_RPos_Func extends FuncPE { // pos(func)
 	return new Pattern(0, new PE_RPos_Func(n.getter)); // TEMP
     if (is_int(n) && n >= 0)
 	return new Pattern(0, new PE_RPos_Int(n));
-    need_nnif('rpos', n);
+    need_nnifv('rpos', n);
 }
 
 //////////////// rtab
@@ -2509,7 +2523,7 @@ class PE_RTab_Func extends FuncPE { // rtab(func)
 	return new Pattern(0, new PE_RTab_Func(n.getter)); // TEMP
     if (is_int(n) && n >= 0)
 	return new Pattern(0, new PE_RTab_Int(n));
-    need_nnif('rtab', n);
+    need_nnifv('rtab', n);
 }
 
 //////////////// rem
@@ -2653,7 +2667,7 @@ class PE_Tab_Func extends FuncPE { // tab(func)
 	return new Pattern(0, new PE_Tab_Func(n.getter)); // TEMP
     if (is_int(n) && n >= 0)
 	return new Pattern(0, new PE_Tab_Int(n));
-    need_nnif('tab', n);
+    need_nnifv('tab', n);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2684,6 +2698,7 @@ let MODULE_EXPORTS = [
     'succeed',
     'tab',
 
+    // classes
     'Var',
 
     // for tests
