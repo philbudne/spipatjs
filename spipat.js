@@ -48,8 +48,8 @@ const TEST_IMAGE = false;
 const PARANOIA = true;
 
 // uni-chars for display of strings:
-const LQ = '«';			// string left quote
-const RQ = '»';			// string right quote
+/*export*/ const LQ = '«';	// string left quote
+/*export*/ const RQ = '»';	// string right quote
 const CURSOR = '❱';		// display before cursor location
 const EOP_INDEX = 0;
 const EOP_SYMBOL = '∎';		// "end of proof" (QED)
@@ -993,7 +993,7 @@ class DMatch extends Match {	// debug match
 
 ////////////////
 
-function print_nodes(refs) {
+/*export*/ function print_nodes(refs) {
     for (let r of refs) {
 	// EOP will display as EOP_SYMBOL
 	let line = `${r.index} ${r.constructor.name}`;
@@ -1011,7 +1011,7 @@ function print_nodes(refs) {
 }
 
 // graphviz "dot" format
-function print_dot(refs) {
+/*export*/ function print_dot(refs) {
     console.log('strict digraph foo {');
     console.log('    node [shape=box];');
     // XXX try to force samerank on previously unplaced nodes by following pthen?
@@ -1345,8 +1345,8 @@ function set2str(cset) {
 ////////////////////////////////////////////////////////////////
 
 // class for match-time variable.
-// pass to .imm/.onmatch, (not)any, break(p|x), (n)span
-//	cursor or (r)(tab|pos), len)
+// pass to .and/.or, .imm/.onmatch, (not)any, break(p|x), (n)span
+//	cursor, (r)(tab|pos), len)
 let vnum = 1;
 
 class Var {
@@ -2269,7 +2269,7 @@ class PE_Fence extends PE {	// fence (built in pattern)
     }
 }
 
-/*export*/const fence = new Pattern(1, new PE_Fence());
+/*export*/ const fence = new Pattern(1, new PE_Fence());
 
 //////////////// fencef (function)
 
@@ -2898,7 +2898,6 @@ let MODULE_EXPORTS = [
     'fence',
     'fencef',
     'len',
-    'notany',
     'notany',
     'nspan',
     'pat',
