@@ -1109,14 +1109,14 @@ class ImageContext {
 		n++;
 	}
 	if (open_and)
-	    this.append(')');		// end ".and("
+	    this.append(')');	// end ".and("
     } // sequence
 
 } // ImageContext
 
 ////////////////
 
-class Pattern {		// primative pattern
+/*export*/ class Pattern {	// primative pattern
     constructor (stk, pe) {
 	this.stk = stk;
 	this.p = pe;
@@ -1180,7 +1180,6 @@ class Pattern {		// primative pattern
 	for (let i = 0; i < arguments.length; i++) {
 	    let r = arguments[i];
 	    if (is_str(r) || is_func(r)) {
-		// XXX handle function returning pattern??
 		lstk++;
 		lp = pe_alt(lp.copy(), sfv_to_pe('or', r));
 	    }
