@@ -2,7 +2,7 @@
 // XXX test backtrack w/ fail, abort, breakx -- split.js
 // XXX test functions, Vars as arguments to and/or
 // XXX test (not)any, (n)span, break(p|x) w/ Var
-// XXX test (r)(pos|tab) w/ Function, Var
+// XXX test (r)pos w/ Function, Var; (r)tab w/ Function
 // XXX test arbno with string, function, variable
 
 'use strict';
@@ -25,6 +25,8 @@ const nspan = spipat.nspan;
 const pat = spipat.pat;
 const rpos = spipat.rpos;
 const span = spipat.span;
+const tab = spipat.tab;
+const rtab = spipat.rtab;
 
 const Var = spipat.Var;
 const LQ = spipat.LQ;
@@ -458,5 +460,16 @@ checkval(qvar.get(), "");
 check(qstr1v.amatch('"abc"', deb), '"abc"');
 checkval(qvar.get(), '"');
 
+const tvar = new Var('t');
+const tabpat1 = tab(1).and(rtab(5).onmatch(tvar));
+//imgcheck(tabpat1, 'tab(1).and(rtab(5).onmatch(Var("t")))'); // XXX broken
+check(tabpat1.amatch("0123456789"), "01234");
+checkval(tvar.get(), "1234");
+tvar.set('');
+
+const tabpat2 = tab(1).and(rtab(1).onmatch(tvar));
+//imgcheck(tabpat2, 'tab(1).and(rtab(1).onmatch(Var("t")))'); // XXX broken
+check(tabpat2.amatch("0123456789"), "012345678");
+checkval(tvar.get(), "12345678");
 //================
 console.log(`${tests} tests: ${ok} ok`);
