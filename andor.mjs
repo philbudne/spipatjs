@@ -1,14 +1,14 @@
 // TEMP:
-import { pat, Pattern } from "./spipat.mjs";
+import { pat, is_pat } from "./spipat.mjs";
 
 export function and(first, ...rest) {
-    if (!(first instanceof Pattern))
+    if (!is_pat(first))
 	first = pat(first);
     return first.and(...rest);
 }
 
 export function or(first, ...rest) {
-    if (!(first instanceof Pattern))
+    if (!is_pat(first))
 	first = pat(first);
     return first.or(...rest);
 }
