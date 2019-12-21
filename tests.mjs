@@ -5,32 +5,31 @@
 // XXX test (r)pos w/ Function, Var; (r)tab w/ Function
 // XXX test arbno with string, function, variable
 
-'use strict';
+import {
+    abort,
+    and,
+    any,
+    arb,
+    arbno,
+    bal,
+    breakp,
+    breakx,
+    cursor,
+    fail,
+    len,
+    notany,
+    nspan,
+    or,
+    pat,
+    rpos,
+    span,
+    tab,
+    rtab,
 
-var spipat = require("./spipat.js");
-
-// UGH! nodejs 4.2.6 doesn't do import/export
-const abort = spipat.abort;
-const any = spipat.any;
-const arb = spipat.arb;
-const arbno = spipat.arbno;
-const bal = spipat.bal;
-const breakp = spipat.breakp;
-const breakx = spipat.breakx;
-const cursor = spipat.cursor;
-const fail = spipat.fail;
-const len = spipat.len;
-const notany = spipat.notany;
-const nspan = spipat.nspan;
-const pat = spipat.pat;
-const rpos = spipat.rpos;
-const span = spipat.span;
-const tab = spipat.tab;
-const rtab = spipat.rtab;
-
-const Var = spipat.Var;
-const LQ = spipat.LQ;
-const RQ = spipat.RQ;
+    Var,
+    LQ,
+    RQ
+} from "./spipat.mjs";
 
 ////////////////////////////////////////////////////////////////
 // tests
@@ -471,5 +470,14 @@ const tabpat2 = tab(1).and(rtab(1).onmatch(tvar));
 //imgcheck(tabpat2, 'tab(1).and(rtab(1).onmatch(Var("t")))'); // XXX broken
 check(tabpat2.amatch("0123456789"), "012345678");
 checkval(tvar.get(), "12345678");
+
+/*
+let m = and('a', 'b', 'c').amatch('abc');
+console.log(m.matched);
+
+m = and(or('a', 'b', 'c'), 'x').amatch('cx');
+console.log(m.matched);
+*/
+
 //================
 console.log(`${tests} tests: ${ok} ok`);
