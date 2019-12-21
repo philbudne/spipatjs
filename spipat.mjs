@@ -28,9 +28,9 @@
 // matching.  It's a translation of the C translation of the GNAT
 // (GNU Ada Translator) gnat.spitbol.patterns library.
 
-// Written using an ES6 (2015) subset supported by nodejs 4.2.6
-// (2016-01-21, v8 version 4.5.103.35). I hope I won't regret that
-// choice as much as I did using C99 for the C port!!
+// Written using an ES6 (2015) under nodejs 13.5.0
+// I hope I won't regret that choice as much as I did
+// using C99 for the C port!!
 
 // Different node types implemented as subclasses of PE.  Probably not
 // as efficient as a big switch, but keeps different aspects of each
@@ -48,8 +48,8 @@ const TEST_IMAGE = false;
 const PARANOIA = true;
 
 // uni-chars for display of strings:
-/*export*/ const LQ = '«';	// string left quote
-/*export*/ const RQ = '»';	// string right quote
+export const LQ = '«';	// string left quote
+export const RQ = '»';	// string right quote
 const CURSOR = '❱';		// display before cursor location
 const EOP_INDEX = 0;
 const EOP_SYMBOL = '∎';		// "end of proof" (QED)
@@ -76,7 +76,7 @@ function is_set(x) {
     return x instanceof Set;
 }
 
-/*export*/ function is_pat(x) {
+export function is_pat(x) {
     return x instanceof Pattern;
 }
 
@@ -322,7 +322,7 @@ const EOP = new PE_EOP();	// single instance, never copied
 // UnsealedPE is NOT for direct use!
 // All classes that inherit from it should call this.seal
 // in the constructor!
-/*export*/ class UnsealedPE extends _PE {
+export class UnsealedPE extends _PE {
     constructor(index, pthen, ok_for_simple_arbno, has_alt) {
 	super(index || 1,
 	      pthen || EOP,
@@ -620,7 +620,7 @@ function sfv_to_pe(who, x) {
 // NOTE: _COULD_ rename Pattern class to PPattern (primative pattern)
 // and construct new patterns thru a Pattern subclass constructor.
 // But this requires fewer keystrokes:
-/*export*/ function pat(x) { // string or function to Pattern
+export function pat(x) { // string or function to Pattern
     return new Pattern(0, sfv_to_pe('pat', x));
 }
 
@@ -990,7 +990,7 @@ class DMatch extends Match {	// debug match
 
 ////////////////
 
-/*export*/ function print_nodes(refs) {
+export function print_nodes(refs) {
     for (let r of refs) {
 	// EOP will display as EOP_SYMBOL
 	let line = `${r.index} ${r.constructor.name}`;
@@ -1008,7 +1008,7 @@ class DMatch extends Match {	// debug match
 }
 
 // graphviz "dot" format
-/*export*/ function print_dot(refs) {
+export function print_dot(refs) {
     console.log('strict digraph foo {');
     console.log('    node [shape=box];');
     // XXX try to force samerank on previously unplaced nodes by following pthen?
@@ -1113,7 +1113,7 @@ class ImageContext {
 
 ////////////////
 
-/*export*/ class Pattern {	// primative pattern
+export class Pattern {	// primative pattern
     constructor (stk, pe) {
 	this.stk = stk;
 	this.p = pe;
@@ -1326,7 +1326,7 @@ class Stack_Entry {
 ////////////////////////////////////////////////////////////////
 
 // make a character set
-/*export*/ function cset(str) {
+export function cset(str) {
     if (!is_str(str))
 	uerror("'cset' needs String");
 
@@ -1345,7 +1345,7 @@ function set2str(cset) {
 //	cursor, (r)(tab|pos), len)
 let vnum = 1;
 
-class Var {
+export class Var {
     constructor(name, value) {
 	if (!name)
 	    name = `var${vnum++}`;
@@ -1373,7 +1373,7 @@ class Var {
 
 //////////////// abort
 
-/*export*/ const abort = new Pattern(0, new PE_Abort());
+export const abort = new Pattern(0, new PE_Abort());
 
 //////////////// alternate (or)
 
@@ -1542,7 +1542,7 @@ class PE_Any_Func extends FuncPE {
     }
 }
 
-/*export*/ function any(x) {
+export function any(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_Any_Set(cset(x)));
     else if (is_set(x))
@@ -1598,7 +1598,7 @@ class PE_Arb_Y extends PE {	// arb (extension)
     }
 }
 
-/*export*/ const arb = new Pattern(1,
+export const arb = new Pattern(1,
 				    new PE_Arb_X(2, EOP,
 						 new PE_Arb_Y()));
 
@@ -1818,7 +1818,7 @@ function bracket(e, p, a) {
     return e;
 } // bracket
 
-/*export*/ function arbno(p) {
+export function arbno(p) {
     let pe;
     let patstk;
     if (is_pat(p)) {
@@ -1994,7 +1994,7 @@ class PE_Bal extends PE {	// Bal
     }
 }
 
-/*export*/ const bal = new Pattern(1, new PE_Bal());
+export const bal = new Pattern(1, new PE_Bal());
 
 //////////////// break
 
@@ -2063,7 +2063,7 @@ class PE_Break_Func extends FuncPE {
     }
 }
 
-/*export*/ function breakp(x) {	// Break Pattern
+export function breakp(x) {	// Break Pattern
     if (is_str(x))
 	return new Pattern(1, new PE_Break_Set(cset(x)));
     else if (is_set(x))
@@ -2172,7 +2172,7 @@ class PE_BreakX_X extends PE {
 // the alternative node is 1,
 // the X node is 2.
 
-/*export*/ function breakx(arg) { // Breakx Pattern
+export function breakx(arg) { // Breakx Pattern
     let b = null;
     if (is_str(arg))
 	b = new PE_BreakX_Set(3, cset(arg));
@@ -2225,7 +2225,7 @@ class PE_Cursor_Var extends VarPE {    // Cursor assignment (var)
     }
 }
 
-/*export*/ function cursor(x) {
+export function cursor(x) {
     if (is_func(x))
 	return new Pattern(0, new PE_Cursor_Func(x));
     if (is_var(x))
@@ -2246,7 +2246,7 @@ class PE_Fail extends PE {	// Fail
     }
 }
 
-/*export*/ const fail = new Pattern(1, new PE_Fail());
+export const fail = new Pattern(1, new PE_Fail());
 
 //////////////// fence (pattern)
 
@@ -2266,7 +2266,7 @@ class PE_Fence extends PE {	// fence (built in pattern)
     }
 }
 
-/*export*/ const fence = new Pattern(1, new PE_Fence());
+export const fence = new Pattern(1, new PE_Fence());
 
 //////////////// fencef (function)
 
@@ -2316,7 +2316,7 @@ const CP_Fence_Y = new PE_Fence_Y();
 // the X node is N + 1,
 // the E node is N + 2.
 
-/*export*/ function fencef(pat) {
+export function fencef(pat) {
     const e = new PE_R_Enter();
     const p = pat.p.copy();
     const x = new PE_Fence_X();
@@ -2383,7 +2383,7 @@ class PE_Len_Func extends FuncPE { // len (function case)
     }
 }
 
-/*export*/ function len(x) {
+export function len(x) {
     if (is_int(x)) {
 	// Note, the following is not just an optimization, it is needed
 	// to ensure that Arbno (Len (0)) does not generate an infinite
@@ -2473,7 +2473,7 @@ class PE_NotAny_Func extends FuncPE {
     }
 }
 
-/*export*/ function notany(x) {
+export function notany(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_NotAny_Set(cset(x)));
     else if (is_set(x))
@@ -2552,7 +2552,7 @@ class PE_NSpan_Func extends FuncPE {
     }
 }
 
-/*export*/ function nspan(x) {
+export function nspan(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_NSpan_Set(cset(x)));
     else if (is_set(x))
@@ -2600,7 +2600,7 @@ class PE_Pos_Func extends FuncPE { // pos(func)
     }
 }
 
-/*export*/ function pos(n) {
+export function pos(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_Pos_Func(n));
     if (is_var(n))
@@ -2645,7 +2645,7 @@ class PE_RPos_Func extends FuncPE { // pos(func)
     }
 }
 
-/*export*/ function rpos(n) {
+export function rpos(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_RPos_Func(n));
     if (is_var(n))
@@ -2694,7 +2694,7 @@ class PE_RTab_Func extends FuncPE { // rtab(func)
     }
 }
 
-/*export*/ function rtab(n) {
+export function rtab(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_RTab_Func(n));
     if (is_var(n))
@@ -2718,7 +2718,7 @@ class PE_Rem extends PE {	// Rem
     }
 }
 
-/*export*/ const rem = new Pattern(0, new PE_Rem());
+export const rem = new Pattern(0, new PE_Rem());
 
 //////////////// span
 
@@ -2801,7 +2801,7 @@ class PE_Span_Func extends FuncPE {
     }
 }
 
-/*export*/ function span(x) {
+export function span(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_Span_Set(cset(x)));
     else if (is_set(x))
@@ -2828,7 +2828,7 @@ class PE_Succeed extends PE {	// succeed
     }
 }
 
-/*export*/ const succeed = new Pattern(1, new PE_Succeed());
+export const succeed = new Pattern(1, new PE_Succeed());
 
 //////////////// tab
 
@@ -2869,7 +2869,7 @@ class PE_Tab_Func extends FuncPE { // tab(func)
     }
 }
 
-/*export*/ function tab(n) {
+export function tab(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_Tab_Func(n));
     if (is_var(n))
@@ -2879,47 +2879,20 @@ class PE_Tab_Func extends FuncPE { // tab(func)
     need_nnifv('tab', n);
 }
 
-////////////////////////////////////////////////////////////////
+//////////////// top level and/or
 
-let MODULE_EXPORTS = [
-    'abort',
-    'any',
-    'arb',
-    'arbno',
-    'bal',
-    'breakp',
-    'breakx',
-    'cset',
-    'cursor',
-    'fail',
-    'fence',
-    'fencef',
-    'len',
-    'notany',
-    'nspan',
-    'pat',
-    'pos',
-    'rem',
-    'rpos',
-    'rtab',
-    'span',
-    'succeed',
-    'tab',
-
-    // classes
-    'Var',
-
-    // for tests
-    'print_nodes',
-    'print_dot',
-    'LQ',
-    'RQ'
-];
-
-// nodejs
-if (typeof exports !== 'undefined') {
-    for (let sym of MODULE_EXPORTS)
-	exports[sym] = eval(sym); // UGH!
+export function and(first, ...rest) {
+    if (!is_pat(first))
+	first = pat(first);
+    return first.and(...rest);
 }
+
+export function or(first, ...rest) {
+    if (!is_pat(first))
+	first = pat(first);
+    return first.or(...rest);
+}
+
+////////////////////////////////////////////////////////////////
 
 //console.log(STRING_LENGTHS);
