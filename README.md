@@ -7,6 +7,8 @@ In SNOBOL4, PATTERN is a fundamental data type that can be composed.
 Matching is non-greedy, backtracking is used to progressively match
 larger prefixes.
 
+Tested with nodejs v13.5.0
+
 ## Primative Patterns
 
 The following primative Patterns are available as const variables:
