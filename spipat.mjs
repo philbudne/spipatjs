@@ -28,15 +28,13 @@
 // matching.  It's a translation of the C translation of the GNAT
 // (GNU Ada Translator) gnat.spitbol.patterns library.
 
-// Written using an ES6 (2015) under nodejs 13.5.0
+// Written as ES6 (2015) under nodejs 13.5.0
 // I hope I won't regret that choice as much as I did
 // using C99 for the C port!!
 
 // Different node types implemented as subclasses of PE.  Probably not
 // as efficient as a big switch, but keeps different aspects of each
 // node (construction, booleans, match operation, display) in one place.
-
-'use strict';			// for test with "nodejs match.js"
 
 //let STRING_LENGTHS = new Array(10).fill(0);
 
