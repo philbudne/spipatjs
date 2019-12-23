@@ -66,23 +66,23 @@ of the special pattern elements that have side effects.
 
 ## Pattern contruction functions
 
-### pat(SF)
+### pat(SFV)
 
-Takes a String to match, or a function that returns a string or
-pattern (to match) or a boolean (which, if true matches the null
-string, and if false fails) and returns a Pattern.
+Takes a String to match, a Var object, or a function that returns a
+string or pattern (to match) or a boolean (which, if true matches the
+null string, and if false fails) and returns a Pattern.
 
 ### cset(S)
 
 Takes a String and returns a (possibly optimized) character set
 representing the Unicode characters in the string.
 
-### any(SSFV)
+### any(SSVF)
 
-Takes a String, cset, Function (returning a String or cset), or Var
-object.  Matches a single character that is any one of the characters
-in the String or Set.  Fails if the current character is not one of
-the given set of characters.
+Takes a String, Set, Var, or Function (returning a String or Set).
+Matches a single character that is any one of the given characters.
+Fails if the current character is not one of the given set of
+characters.
 
 ### arbno(P)
 
@@ -97,27 +97,27 @@ null.or(P.and(null.or(P.and(null.or( ....)))))
 The pattern P may contain any number of pattern elements
 including the use of alternation and concatenation.
 
-### breakp(SSFV)
+### breakp(SSVF)
 
-Where SSF is a String, cset, Function returning a String or cset, or
-Var object.  matches a string of zero or more characters up to but not
+Where SSF is a String, Set, Var, or Function returning a String or
+Set.  Matches a string of zero or more characters up to but not
 including a break character that is one of the characters given in the
-string S.  Can match the null string, but cannot match the last
+argument.  Can match the null string, but cannot match the last
 character in the string, since a break character is required to be
 present.
 
-### breakx(SSFV)
+### breakx(SSVF)
 
-Where SSFV is a String, cset, Function, or Var behaves exactly like
-breakp(SSFV) when it first matches, but if a string is successfully
+Where SSVF is a String, Set, Var, or Function. Behaves exactly like
+breakp(SSVF) when it first matches, but if a string is successfully
 matched, then a subsequent failure causes an attempt to extend the
 matched string.
 
-### cursor(F)
+### cursor(VF)
 
-Calls function F with a one-based integer cursor position, defined as
-the count of characters that have been matched so far (including any
-start point moves).
+Sets Var or calls Function with a one-based integer cursor position,
+defined as the count of characters that have been matched so far
+(including any start point moves).
 
 ### fencef(P)
 
@@ -135,13 +135,13 @@ Where N is a positive integer (or Function returning one), matches the
 given number of characters. For example, Len(10) matches any string
 that is exactly ten characters long.
 
-### notany(SSFV)
+### notany(SSVF)
 
-Where S is a String, cset, Function returning a String or cset, or
-Var, matches a single character that is not one of the characters.
+Where S is a String, Set, Var, or Function returning a String or Set
+matches a single character that is not one of the given characters.
 Fails if the current character is one of the given set of characters.
 
-### nspan(SSFV)
+### nspan(SSVF)
 
 Where SSF is a String, yadda, yadda, matches a string of zero or more
 characters that is among the characters given in the string. Always
@@ -174,12 +174,16 @@ the current position until exactly N characters have
 been matched in all. Fails if more than N characters
 have already been matched.
 
-### span(SSFV)
+### span(SSVF)
 
-Where SSF is a String, cset, Function, or Var, matches a string of one
+Where SSF is a String, Set, Var, or Function, matches a string of one
 or more characters that is among the characters given.  Always matches
 the longest possible such string.  Fails if the current character is
 not one of the given set of characters.
+
+## `and` and `or` functions
+
+Functions `and` and `or` are available to construct patterns.
 
 ## Pattern object
 
@@ -194,26 +198,26 @@ or null on failure.
 
 #### and(...)
 
-Takes any number of Pattern, String or Function arguments
-and returns a new Pattern which is a concatenation of
-all of the arguments.
+Takes any number of Pattern, String, Var, or Function arguments and
+returns a new Pattern which is a concatenation of all of the
+arguments.
 
-#### imm(F)
+#### imm(VF)
 
-Takes a Function with one argument, and returns a new Pattern.
-Each time the original Pattern matches, the Function will
-be called with the matching string.
+Takes a Var, or a Function with one argument, and returns a new Pattern.
+Each time the original Pattern matches, the Var.set method or Function
+will be called with the matching string.
 
-#### onmatch(F)
+#### onmatch(VF)
 
-Takes a Function with one argument, and returns a new Pattern.
-If the entire Pattern match succeeds, 
-the Function will be called with each matching string.
+Takes a Var, or a Function with one argument, and returns a new
+Pattern.  If the entire Pattern match succeeds, the Var.set method or
+Function will be called with each matching string.
 
 #### or(...)
 
-Takes any number of Pattern, String or Function arguments
-and returns a Pattern which matches any of the Patterns
+Takes any number of Pattern, String, Var, or Function arguments and
+returns a Pattern which matches any of the Patterns
 
 #### umatch(SUBJECT[, DEBUG])
 
