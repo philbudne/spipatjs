@@ -481,3 +481,7 @@ console.log(m.matched);
 
 //================
 console.log(`${tests} tests: ${ok} ok`);
+if (ok == tests)
+    process.exit(0);
+else
+    process.exit(1);
