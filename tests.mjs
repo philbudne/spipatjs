@@ -57,6 +57,12 @@ function test_err(msg) {
     console.log(`${caller}: ${msg}`);
 }
 
+function passed() {
+    ok++;
+    if (process && process.stdout)
+	process.stdout.write('.');
+}
+
 function check(m, expect) {
     tests++;
     if (expect && m === null) {
@@ -67,19 +73,19 @@ function check(m, expect) {
 	    test_err(`expecting failure, but matched ${LQ}${m.matched}${RQ}`);
 	}
 	else
-	    ok++;
+	    passed();
     }
     else if (m.matched !== expect) {
 	test_err(`expecting ${LQ}${expect}${RQ}, but matched ${LQ}${m.matched}${RQ}`);
     }
     else
-	ok++;
+	passed();
 }
 
 function checkval(v, expect) {
     tests++;
     if (v === expect)
-	ok++;
+	passed();
     else
 	test_err(`expecting ${LQ}${expect}${RQ} got ${LQ}${v}${RQ}`);
 }
@@ -89,7 +95,7 @@ function imgcheck(p, expect) {
     //spipat.print_nodes(p.p.ref_array())
     let v = p.toString();
     if (v === expect)
-	ok++;
+	passed();
     else {
 	test_err(`imgcheck failed:\n  expecting ${LQ}${expect}${RQ}\n        got ${LQ}${v}${RQ}`);
 	//spipat.print_nodes(p.p.ref_array())
@@ -480,6 +486,7 @@ console.log(m.matched);
 */
 
 //================
+console.log('');
 console.log(`${tests} tests: ${ok} ok`);
 if (ok == tests)
     process.exit(0);
