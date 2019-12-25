@@ -1,3 +1,4 @@
+// -*-javascript-*-
 // SPITBOL Patterns in JavaScript
 // Based on GNAT (GNU Ada Translator) GNAT.SPITBOL.PATTERNS
 ////////////////////////////////////////////////////////////////

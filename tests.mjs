@@ -1,3 +1,5 @@
+// -*-javascript-*-
+
 // XXX test rem, pos, fence pat(Var)
 // XXX test backtrack w/ fail, abort, breakx -- split.js
 // XXX test functions, Vars as arguments to and/or
