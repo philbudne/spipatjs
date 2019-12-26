@@ -183,24 +183,25 @@ class _PE {			// Pattern Element
 	this.need_pat = false;
     }
 
+    // methods for image (conversion to string):
     name() {
 	return this.constructor.name;
     }
 
-    data() {
+    data() {			// return string for additional data
 	return null;
     }
 
-    inext() {
+    inext() {			// return subsequent pattern (for image)
 	return this.pthen;
     }
 
     image(ic) {
-	throw this.name() + " image not defined!";
+	error(this.name() + " image not defined!");
     }
 
     match(m) {
-	throw this.name() + " match not defined!";
+	error(this.name() + " match not defined!");
     }
 
     // return an array of pointers to elements of pattern
@@ -2890,6 +2891,20 @@ export function or(first, ...rest) {
     if (!is_pat(first))
 	first = pat(first);
     return first.or(...rest);
+}
+
+//////////////// top level onmatch/imm
+
+export function imm(p, arg) {
+    if (!is_pat(p))
+	p = pat(p);
+    return p.imm(arg);
+}
+
+export function onmatch(p, arg) {
+    if (!is_pat(p))
+	p = pat(p);
+    return p.onmatch(arg);
 }
 
 ////////////////////////////////////////////////////////////////
