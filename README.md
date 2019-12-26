@@ -74,8 +74,14 @@ null string, and if false fails) and returns a Pattern.
 
 ### cset(S)
 
-Takes a String and returns a (possibly optimized) character set
-representing the Unicode characters in the string.
+Takes a String and returns a Set representing the Unicode
+characters in the string.
+
+### and(....)
+
+Takes any number of Pattern, String, Var, or Function arguments and
+returns a new Pattern which is a concatenation of all of the
+arguments.
 
 ### any(SSVF)
 
@@ -148,6 +154,11 @@ characters that is among the characters given in the string. Always
 matches the longest possible such string.  Always succeeds, since it
 can match the null string.
 
+### or(...)
+
+Takes any number of Pattern, String, Var, or Function arguments and
+returns a Pattern which attempts to match each in turn.
+
 ### pos(NF)
 
 Where NF is a positive integer (or Function), matches the null string
@@ -217,7 +228,7 @@ Function will be called with each matching string.
 #### or(...)
 
 Takes any number of Pattern, String, Var, or Function arguments and
-returns a Pattern which matches any of the Patterns
+returns a Pattern which attempts to match each in turn.
 
 #### umatch(SUBJECT[, DEBUG])
 
