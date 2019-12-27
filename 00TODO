@@ -3,10 +3,7 @@ TODO:
 figure out node.js/browser compatible module format!
 	use Babel???
 
-XXX fix "or" imaging!
-XXX fix qstr1v imaging!!
-XXX "inext()" should be called successor()?
-XXX document Var() object
+XXX document Var() object in README.md
 
 PE_((Not)Any|Break|(N)Span)_Func: display func value in "matching"
 PE_((Not)Any|Break|(N)Span)_Var: display var value in "matching"

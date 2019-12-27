@@ -294,7 +294,7 @@ check(alpat3.amatch('night job', deb), 'night job');
 const alpat4 = pat('1').or('2', '3');
 //imgcheck(alpat4, 'pat("1").or("2", "3")')
 //imgcheck(alpat4, 'pat("1").or("2").or("3")')
-imgcheck(alpat4, 'or(or("1", "2"), "3")');
+imgcheck(alpat4, 'or("1", "2", "3")');
 check(alpat4.amatch('1', deb), '1');
 check(alpat4.amatch('2', deb), '2');
 check(alpat4.amatch('3', deb), '3');
@@ -302,7 +302,7 @@ check(alpat4.amatch('3', deb), '3');
 const alpat5 = pat('1').or('2').or('3');
 //imgcheck(alpat5, 'pat("1").or("2", "3")') // !!
 //imgcheck(alpat5, 'pat("1").or("2").or("3")')
-imgcheck(alpat5, 'or(or("1", "2"), "3")');
+imgcheck(alpat5, 'or("1", "2", "3")');
 check(alpat5.amatch('1', deb), '1');
 check(alpat5.amatch('2', deb), '2');
 check(alpat5.amatch('3', deb), '3');
@@ -310,7 +310,7 @@ check(alpat5.amatch('3', deb), '3');
 const alpat6 = alpat1.and(alpat5);
 //imgcheck(alpat6, 'pat("day").or("night").and(pat("1").or("2", "3"))')
 //imgcheck(alpat6, 'pat("day").or("night").and(pat("1").or("2").or("3"))')
-imgcheck(alpat6, 'and(or("day", "night"), or(or("1", "2"), "3"))')
+imgcheck(alpat6, 'and(or("day", "night"), or("1", "2", "3"))')
 
 // replacement
 const rpat = pat('🌎');
@@ -380,7 +380,7 @@ check(nanpat.amatch('ax', deb), 'ax');
 const orpat = pat('yes').or('no').or('maybe');
 //imgcheck(orpat, 'pat("yes").or("no", "maybe")')
 //imgcheck(orpat, 'pat("yes").or("no").or("maybe")')
-imgcheck(orpat, 'or(or("yes", "no"), "maybe")')
+imgcheck(orpat, 'or("yes", "no", "maybe")')
 check(orpat.amatch('yes', deb), 'yes');
 check(orpat.amatch('no', deb), 'no');
 check(orpat.amatch('maybe', deb), 'maybe');
@@ -389,7 +389,7 @@ checkval(orpat.amatch('foo', deb), null);
 const orpat2 = pat('yes').or('no', 'maybe');
 //imgcheck(orpat2, 'pat("yes").or("no", "maybe")')
 //imgcheck(orpat2, 'pat("yes").or("no").or("maybe")')
-imgcheck(orpat2, 'or(or("yes", "no"), "maybe")')
+imgcheck(orpat2, 'or("yes", "no", "maybe")')
 check(orpat2.amatch('yes', deb), 'yes');
 check(orpat2.amatch('no', deb), 'no');
 check(orpat2.amatch('maybe', deb), 'maybe');
@@ -494,9 +494,9 @@ imgcheck(pat("x").imm((x) => {}),
 imgcheck(pat("x").or("y").imm((x) => {}),
 	 'imm(or("x", "y"), (x) => {})');
 imgcheck(pat("x").or("y", "z").imm((x) => {}),
-	 'imm(or(or("x", "y"), "z"), (x) => {})')
+	 'imm(or("x", "y", "z"), (x) => {})')
 imgcheck(pat("x").or("y", "z").imm((x) => {}),
-	 'imm(or(or("x", "y"), "z"), (x) => {})');
+	 'imm(or("x", "y", "z"), (x) => {})');
 imgcheck(pat("x").and("y", "z").imm((x) => {}),
 	 'imm(and("x", "y", "z"), (x) => {})');
 
@@ -515,7 +515,7 @@ check(imgpat2.amatch("7890abcde", deb), "7890abcde")
 const imgpat3 = pat("1").and("23", "456").or(pat("7890").and("abcde"), arb);
 //imgcheck(imgpat3, 'pat("1").and("23", "456").or(pat("7890").and("abcde"), arb)');
 //imgcheck(imgpat3, 'pat("1").and("23", "456").or(pat("7890").and("abcde")).or(arb)');
-imgcheck(imgpat3, 'or(or(and("1", "23", "456"), and("7890", "abcde")), arb)');
+imgcheck(imgpat3, 'or(and("1", "23", "456"), and("7890", "abcde"), arb)');
 
 const imgpat4 = pat("7890").and("abcde").or(arb);
 //imgcheck(imgpat4, 'pat("7890").and("abcde").or(arb)'); // XXX reversed

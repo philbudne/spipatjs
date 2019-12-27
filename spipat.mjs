@@ -1418,23 +1418,29 @@ class PE_Alt extends AltPE {
 
     image(ic) {
 	let er = this.inext(ic);
+	//console.log("er", er.index, er.constructor.name)
 
-	ic.append("or(");
-	ic.sequence(this.pthen, er, true); // allow bare strings
+	// render or(or(a, b), c) as or(a, b, c)
+	var elts = [];
 	let e1 = this;
-	let n = 0;
 	//console.log('---- alt.image');
 	for (;;) {
-	    e1 = e1.alt;
-	    //console.log("e1", e1.index, e1.constructor.name, "then", e1.pthen.index, e1.pthen.constructor.name);
-	    ic.append(", ");
-	    if (e1 instanceof PE_Alt) {
-		ic.sequence(e1.pthen, er, true); // allow bare strings
-	    }
-	    else {
-		ic.sequence(e1, er, true); // allow bare strings
+	    //console.log("e1", e1.index, e1.constructor.name, "then", e1.pthen.index, e1.pthen.constructor.name, e1.pthen.data());
+	    elts.unshift(e1.alt);
+	    e1 = e1.pthen;
+	    if (!(e1 instanceof PE_Alt)) {
+		elts.unshift(e1);
 		break;
 	    }
+	}
+	ic.append("or(");
+	let first = true
+	for (e1 of elts) {
+	    if (first)
+		first = false;
+	    else
+		ic.append(', ');
+	    ic.sequence(e1, er, true); // allow bare string
 	}
 	ic.append(")");
     }
