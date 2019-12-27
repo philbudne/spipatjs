@@ -18,9 +18,11 @@ import {
     breakx,
     cursor,
     fail,
+    imm,
     len,
     notany,
     nspan,
+    onmatch,
     or,
     pat,
     rpos,
@@ -105,15 +107,31 @@ function imgcheck(p, expect) {
     tests++;
     //spipat.print_nodes(p.p.ref_array())
     let v = p.toString();
-    if (v === expect)
-	passed();
-    else {
+
+    if (v !== expect) {
 	test_err('imgcheck failed');
 	console.log(`expecting ${LQ}${expect}${RQ}`);
-        console.log(`      got ${LQ}${v}${RQ}`);
+	console.log(`      got ${LQ}${v}${RQ}`);
 	//spipat.print_nodes(p.p.ref_array())
 	//spipat.print_dot(p.p.ref_array())
+	return;
     }
+
+    try {
+	const p2 = eval(v);	// result must eval!
+	const v2 = p2.toString();
+	if (v2 !== v) {		// and convert to same string!
+	    test_err('imgcheck failed');
+	    console.log(` p.toString: ${LQ}${v}${RQ}`);
+	    console.log(`p2.toString: ${LQ}${v2}${RQ}`);
+	    return;
+	}
+    }
+    catch (e) {
+	test_err(`imgcheck eval ${v} failed: ${e}`);
+	return;
+    }
+    passed();
 }
 
 const apat = any('123' +  "😀😀😀");
@@ -200,7 +218,7 @@ checkval(v, null);
 let vv = new Var('vv');
 const asvpat = strpat.onmatch(vv);
 //imgcheck(asvpat, 'pat("hello").onmatch(Var("vv"))')
-imgcheck(asvpat, 'onmatch("hello", Var("vv"))');
+imgcheck(asvpat, 'onmatch("hello", new Var("vv"))');
 var m = asvpat.umatch('   hello world   ', deb);
 check(m, 'hello');
 checkval(vv.get(), 'hello')
@@ -209,7 +227,7 @@ vv.set(null);
 checkval(vv.get(), null)
 const asvpat2 = asvpat.and(" world");
 //imgcheck(asvpat2, 'pat("hello").onmatch(Var("vv")).and(" world")')
-imgcheck(asvpat2, 'and(onmatch("hello", Var("vv")), " world")');
+imgcheck(asvpat2, 'and(onmatch("hello", new Var("vv")), " world")');
 m = asvpat2.umatch('   hello world   ', deb);
 check(m, 'hello world');
 checkval(vv.get(), 'hello')
@@ -241,7 +259,7 @@ checkval(v, 'hello');
 // immediate var set
 const iasvpat = strpat.imm(vv);
 //imgcheck(iasvpat, 'pat("hello").imm(Var("vv"))')
-imgcheck(iasvpat, 'imm("hello", Var("vv"))');
+imgcheck(iasvpat, 'imm("hello", new Var("vv"))');
 check(iasvpat.umatch('   hello world   ', deb), 'hello');
 checkval(vv.get(), 'hello')
 
@@ -250,7 +268,7 @@ vv.set(null);
 checkval(vv.get(), null)
 const iasvpat3 = iasvpat.and(" goodbye");
 //imgcheck(iasvpat3, 'pat("hello").imm(Var("vv")).and(" goodbye")')
-imgcheck(iasvpat3, 'and(imm("hello", Var("vv")), " goodbye")');
+imgcheck(iasvpat3, 'and(imm("hello", new Var("vv")), " goodbye")');
 checkval(iasvpat3.umatch('   hello world   ', deb), null);
 checkval(vv.get(), 'hello');
 
@@ -513,7 +531,7 @@ check(recurse1.amatch('bbbba', deb), 'bbbba');
 
 const qvar = new Var('quote');
 const qstr1v = any('"' + "'").imm(qvar).and(breakp(qvar), pat(qvar)); // XXX direct var!!!
-imgcheck(qstr1v, 'and(imm(any("\\"\'"), Var("quote")), breakp(Var("quote")), PE_Var(Var("quote")))');
+imgcheck(qstr1v, 'and(imm(any("\\"\'"), new Var("quote")), breakp(new Var("quote")), new Var("quote"))');
 check(qstr1v.amatch("'abc'", deb), "'abc'");
 checkval(qvar.get(), "'");
 qvar.set('');
@@ -524,14 +542,14 @@ checkval(qvar.get(), '"');
 const tvar = new Var('t');
 const tabpat1 = tab(1).and(rtab(5).onmatch(tvar));
 //imgcheck(tabpat1, 'tab(1).and(rtab(5).onmatch(Var("t")))');
-imgcheck(tabpat1, 'and(tab(1), onmatch(rtab(5), Var("t")))');
+imgcheck(tabpat1, 'and(tab(1), onmatch(rtab(5), new Var("t")))');
 check(tabpat1.amatch("0123456789"), "01234");
 checkval(tvar.get(), "1234");
 tvar.set('');
 
 const tabpat2 = tab(1).and(rtab(1).onmatch(tvar));
 //imgcheck(tabpat2, 'tab(1).and(rtab(1).onmatch(Var("t")))');
-imgcheck(tabpat2, 'and(tab(1), onmatch(rtab(1), Var("t")))');
+imgcheck(tabpat2, 'and(tab(1), onmatch(rtab(1), new Var("t")))');
 check(tabpat2.amatch("0123456789"), "012345678");
 checkval(tvar.get(), "12345678");
 

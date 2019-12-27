@@ -522,6 +522,10 @@ class PE_Var extends VarPE {
 	}
 	return M_Fail;
     }
+
+    image(ic) {
+	ic.append(this.v.toString());
+    }
 }
 
 class FuncPE extends UnsealedPE {
@@ -1158,7 +1162,7 @@ export class Pattern {	// primative pattern
 	let lstk = this.stk;
 	for (let i = 0; i < arguments.length; i++) {
 	    let r = arguments[i];
-	    if (is_str(r) || is_func(r)) {
+	    if (is_str(r) || is_func(r) || is_var(r)) {
 		lp = pe_conc(lp.copy(), sfv_to_pe('and', r), 0);
 		// no chnge to lstk?? what about func???
 	    }
@@ -1168,7 +1172,7 @@ export class Pattern {	// primative pattern
 		lstk += r.stk;
 	    }
 	    else
-		uerror("'and' needs Pattern, String or Function");
+		uerror("'and' needs Pattern, String, Var, or Function");
 	} // for arguments
 	return new Pattern(lstk, lp);
     } // and
@@ -1178,7 +1182,7 @@ export class Pattern {	// primative pattern
 	let lp = this.p;
 	for (let i = 0; i < arguments.length; i++) {
 	    let r = arguments[i];
-	    if (is_str(r) || is_func(r)) {
+	    if (is_str(r) || is_func(r) || is_var(r)) {
 		lstk++;
 		lp = pe_alt(lp.copy(), sfv_to_pe('or', r));
 	    }
@@ -1187,7 +1191,7 @@ export class Pattern {	// primative pattern
 		lp = pe_alt(lp.copy(), r.p.copy());
 	    }
 	    else
-		uerror("'or' needs Pattern, String or Function");
+		uerror("'or' needs Pattern, String, Var, or Function");
 	} // for arguments
 	return new Pattern(lstk, lp);
     } // or
@@ -1364,7 +1368,7 @@ export class Var {
     }
 
     toString() {
-	return `Var(${stringify(this.name)})`;
+	return `new Var(${stringify(this.name)})`;
     }
 }
 
@@ -2414,10 +2418,10 @@ class PE_Len_Var extends VarPE { // len (var)
     }
 
     match(m) {
-	let len = parseInt(this.var.get()); // XXX .get_int()?
+	let len = parseInt(this.v.get()); // XXX .get_int()?
 	m.petrace(this, `matching len (var) ${len}`);
 	if (len < 0)
-	    need_nni_var('len', len, this.var);
+	    need_nni_var('len', len, this.v);
 	if (m.cursor + len > m.length)
 	    return M_Fail;
 	m.cursor += len;
@@ -2652,7 +2656,7 @@ class PE_Pos_Var extends VarPE { // pos(var)
     }
 
     match(m) {
-	let n = parseInt(this.var.get()); // XXX .get_int()?
+	let n = parseInt(this.v.get()); // XXX .get_int()?
 	m.petrace(this, `matching rpos (var) ${n}`);
 	if (n < 0)
 	    uerror(`rpos function ${this.func} returned ${n}`);
@@ -2717,7 +2721,7 @@ class PE_RPos_Var extends VarPE { // pos(var)
     }
 
     match(m) {
-	let n = parseInt(this.var.get()); // XXX .get_int()?
+	let n = parseInt(this.v.get()); // XXX .get_int()?
 	m.petrace(this, `matching pos (var) ${n}`);
 	if (n < 0)
 	    uerror(`pos function ${this.func} returned ${n}`);
@@ -2786,10 +2790,10 @@ class PE_RTab_Var extends VarPE { // rtab(var)
     }
 
     match(m) {
-	let n = parseInt(this.var.get()); // XXX .get_int()?
+	let n = parseInt(this.v.get()); // XXX .get_int()?
 	m.petrace(this, `matching rtab (var) ${n}`);
 	if (n < 0)
-	    need_nni_var('rtab', n, this.var);
+	    need_nni_var('rtab', n, this.v);
 	if (m.cursor <= m.length - n) {
 	    m.cursor = m.length - n;
 	    return M_Succeed;
@@ -2983,10 +2987,10 @@ class PE_Tab_Var extends VarPE { // tab(var)
     }
 
     match(m) {
-	let n = parseInt(this.var.get()); // XXX .get_int()?
+	let n = parseInt(this.v.get()); // XXX .get_int()?
 	m.petrace(this, `matching tab (var) ${n}`);
 	if (n < 0)
-	    need_nni_func('tab', n, this.var);
+	    need_nni_func('tab', n, this.v);
 	if (m.cursor <= n) {
 	    m.cursor = n;
 	    return M_Succeed;
