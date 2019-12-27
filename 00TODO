@@ -8,11 +8,11 @@ XXX fix qstr1v imaging!!
 XXX "inext()" should be called successor()?
 XXX document Var() object
 
-add PE_((R|'')(Pos|Tab))|Len)_Var nodes
 PE_((Not)Any|Break|(N)Span)_Func: display func value in "matching"
 PE_((Not)Any|Break|(N)Span)_Var: display var value in "matching"
 Accept non-bool returns as truthy in PE_Func??  Only reject undefined??
 'null' pattern variable?? PE_Null??
+cache ref_array in Pattern.ra?
 transfer more node documentation to spipat.js
 make print_{nodes,dot} Pattern methods??
 StackVar class?? only allow .set()?

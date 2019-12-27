@@ -4,7 +4,7 @@
 // XXX test backtrack w/ fail, abort, breakx -- split.js
 // XXX test functions, Vars as arguments to and/or
 // XXX test (not)any, (n)span, break(p|x) w/ Var
-// XXX test (r)pos w/ Function, Var; (r)tab w/ Function
+// XXX test (r)pos, (r)tab, len w/ Function, Var
 // XXX test arbno with string, function, variable
 
 import {

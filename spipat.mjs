@@ -149,8 +149,12 @@ function need_nnifv(who, n) {
     throw new SpipatUserError(`'${who}' needs non-negative integer, Function, or Var, got ${n}`);
 }
 
-function need_nni(who, n, func) {
+function need_nni_func(who, n, func) {
     throw new SpipatUserError(`'${who}' needs non-negative integer from function ${func} got ${n}`);
+}
+
+function need_nni_var(who, n, v) {
+    throw new SpipatUserError(`'${who}' needs non-negative integer from var ${v.name} got ${n}`);
 }
 
 // onmatch/imm/cursor need function or Var
@@ -207,6 +211,7 @@ class _PE {			// Pattern Element
     // return an array of pointers to elements of pattern
     // rooted at this element.
     ref_array() {
+	// XXX cache in this.ra???
 	let ra = new Array(this.index);
 
 	// Record given pattern element if not already recorded in ra,
@@ -220,7 +225,8 @@ class _PE {			// Pattern Element
 		record(pe.alt);
 	}
 
-	record(this);
+	record(this);		// walk the tree
+
 	Object.freeze(ra);
 	return ra;
     } // ref_array
@@ -1347,8 +1353,6 @@ export class Var {
 	    name = `var${vnum++}`;
 	this.name = name
 	this.value = value
-	// XXX temporary crock, need to clone all the node types!
-	this.getter = () => this.get();
     }
 
     get() {
@@ -2060,8 +2064,8 @@ class PE_Break_Var extends VarPE {
 }
 
 class PE_Break_Func extends FuncPE {
-    constructor(v) {		// XXX Func1PE?
-	super(1, v);
+    constructor(func) {		// XXX Func1PE?
+	super(1, func);
     }
 
     match(m) {
@@ -2119,7 +2123,7 @@ class PE_BreakX_Set extends SetPE { // breakx (character set case)
     }
 }
 
-class PE_BreakX_Var extends VarPE { // breakx (var case)
+class PE_BreakX_Var extends VarPE { // breakx(var)
     match(m) {
 	const str = this.v.get();
 	if (!is_str(str))
@@ -2392,7 +2396,28 @@ class PE_Len_Func extends FuncPE { // len (function case)
 	let len = this.func();
 	m.petrace(this, `matching len (func) ${len}`);
 	if (!is_int(len) || len < 0)
-	    need_nni('len', len, this.func);
+	    need_nni_func('len', len, this.func);
+	if (m.cursor + len > m.length)
+	    return M_Fail;
+	m.cursor += len;
+	return M_Succeed;
+    }
+
+    name() {
+	return "len";
+    }
+}
+
+class PE_Len_Var extends VarPE { // len (var)
+    constructor(v) {		 // XXX Var1PE?
+	super(1, v);
+    }
+
+    match(m) {
+	let len = parseInt(this.var.get()); // XXX .get_int()?
+	m.petrace(this, `matching len (var) ${len}`);
+	if (len < 0)
+	    need_nni_var('len', len, this.var);
 	if (m.cursor + len > m.length)
 	    return M_Fail;
 	m.cursor += len;
@@ -2417,7 +2442,7 @@ export function len(x) {
     else if (is_func(x))
 	return new Pattern(0, new PE_Len_Func(x));
     else if (is_var(x))
-	return new Pattern(0, new PE_Len_Func(x.getter)); // TEMP
+	return new Pattern(0, new PE_Len_Var(x));
     uerror("'len' takes non-negative Number or Function");
 }
 
@@ -2445,7 +2470,7 @@ class PE_NotAny_Set extends SetPE {
 }
 
 class PE_NotAny_Var extends VarPE {
-    constructor(v) {		// XXX Var1PE
+    constructor(v) {		// XXX Var1PE?
 	super(1, v, true);	// ok_for_simple_arbno
     }
 
@@ -2621,11 +2646,31 @@ class PE_Pos_Func extends FuncPE { // pos(func)
     }
 }
 
+class PE_Pos_Var extends VarPE { // pos(var)
+    constructor(v) {		 // XXX Var1PE?
+	super(1, v);
+    }
+
+    match(m) {
+	let n = parseInt(this.var.get()); // XXX .get_int()?
+	m.petrace(this, `matching rpos (var) ${n}`);
+	if (n < 0)
+	    uerror(`rpos function ${this.func} returned ${n}`);
+	if (m.cursor === n)
+	    return M_Succeed;
+	return M_Fail;
+    }
+
+    name() {
+	return "pos";
+    }
+}
+
 export function pos(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_Pos_Func(n));
     if (is_var(n))
-	return new Pattern(0, new PE_Pos_Func(n.getter)); // TEMP
+	return new Pattern(0, new PE_Pos_Var(n));
     if (is_int(n) && n >= 0)
 	return new Pattern(0, new PE_Pos_Int(n));
     need_nnifv('pos', n);
@@ -2666,11 +2711,31 @@ class PE_RPos_Func extends FuncPE { // pos(func)
     }
 }
 
+class PE_RPos_Var extends VarPE { // pos(var)
+    constructor(v) {		  // XXX Var1PE?
+	super(1, v);
+    }
+
+    match(m) {
+	let n = parseInt(this.var.get()); // XXX .get_int()?
+	m.petrace(this, `matching pos (var) ${n}`);
+	if (n < 0)
+	    uerror(`pos function ${this.func} returned ${n}`);
+	if (m.cursor === m.length - n)
+	    return M_Succeed;
+	return M_Fail;
+    }
+
+    name() {
+	return "rpos";
+    }
+}
+
 export function rpos(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_RPos_Func(n));
     if (is_var(n))
-	return new Pattern(0, new PE_RPos_Func(n.getter)); // TEMP
+	return new Pattern(0, new PE_RPos_Var(n));
     if (is_int(n) && n >= 0)
 	return new Pattern(0, new PE_RPos_Int(n));
     need_nnifv('rpos', n);
@@ -2702,7 +2767,29 @@ class PE_RTab_Func extends FuncPE { // rtab(func)
 	let n = this.func();
 	m.petrace(this, `matching rtab (func) ${n}`);
 	if (n < 0)
-	    need_nni('rtab', n, this.func);
+	    need_nni_func('rtab', n, this.func);
+	if (m.cursor <= m.length - n) {
+	    m.cursor = m.length - n;
+	    return M_Succeed;
+	}
+	return M_Fail;
+    }
+
+    name() {
+	return "rtab";
+    }
+}
+
+class PE_RTab_Var extends VarPE { // rtab(var)
+    constructor(v) {		  // XXX Var1PE?
+	super(1, v);
+    }
+
+    match(m) {
+	let n = parseInt(this.var.get()); // XXX .get_int()?
+	m.petrace(this, `matching rtab (var) ${n}`);
+	if (n < 0)
+	    need_nni_var('rtab', n, this.var);
 	if (m.cursor <= m.length - n) {
 	    m.cursor = m.length - n;
 	    return M_Succeed;
@@ -2719,7 +2806,7 @@ export function rtab(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_RTab_Func(n));
     if (is_var(n))
-	return new Pattern(0, new PE_RTab_Func(n.getter)); // TEMP
+	return new Pattern(0, new PE_RTab_Var(n));
     if (is_int(n) && n >= 0)
 	return new Pattern(0, new PE_RTab_Int(n));
     need_nnifv('rtab', n);
@@ -2877,7 +2964,29 @@ class PE_Tab_Func extends FuncPE { // tab(func)
 	let n = this.func();
 	m.petrace(this, `matching tab (func) ${n}`);
 	if (n < 0)
-	    need_nni('tab', n, this.func);
+	    need_nni_func('tab', n, this.func);
+	if (m.cursor <= n) {
+	    m.cursor = n;
+	    return M_Succeed;
+	}
+	return M_Fail;
+    }
+
+    name() {
+	return "tab";
+    }
+}
+
+class PE_Tab_Var extends VarPE { // tab(var)
+    constructor(v) {		// XXX Var1PE?
+	super(1, v);
+    }
+
+    match(m) {
+	let n = parseInt(this.var.get()); // XXX .get_int()?
+	m.petrace(this, `matching tab (var) ${n}`);
+	if (n < 0)
+	    need_nni_func('tab', n, this.var);
 	if (m.cursor <= n) {
 	    m.cursor = n;
 	    return M_Succeed;
@@ -2894,7 +3003,7 @@ export function tab(n) {
     if (is_func(n))
 	return new Pattern(0, new PE_Tab_Func(n));
     if (is_var(n))
-	return new Pattern(0, new PE_Tab_Func(n.getter)); // TEMP
+	return new Pattern(0, new PE_Tab_Var(n));
     if (is_int(n) && n >= 0)
 	return new Pattern(0, new PE_Tab_Int(n));
     need_nnifv('tab', n);
