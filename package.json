@@ -1,6 +1,6 @@
 {
     "name" : "spipat",
-    "version" : "0.0.1",
+    "version" : "0.5",
     "description" : "SNOBOL/SPITBOL pattern matching",
     "keywords" : [ "SNOBOL", "SPITBOL", "pattern"],
     "license" : "GPL-3.0",
