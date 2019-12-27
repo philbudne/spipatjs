@@ -1370,6 +1370,10 @@ export class Var {
     toString() {
 	return `new Var(${stringify(this.name)})`;
     }
+
+    get_int() {
+	return parseInt(this.get() || '0');
+    }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2421,7 +2425,7 @@ class PE_Len_Var extends VarPE { // len (var)
     }
 
     match(m) {
-	let len = parseInt(this.v.get()); // XXX .get_int()?
+	let len = this.v.get_int();
 	m.petrace(this, `matching len (var) ${len}`);
 	if (len < 0)
 	    need_nni_var('len', len, this.v);
@@ -2659,7 +2663,7 @@ class PE_Pos_Var extends VarPE { // pos(var)
     }
 
     match(m) {
-	let n = parseInt(this.v.get()); // XXX .get_int()?
+	let n = this.v.get_int();
 	m.petrace(this, `matching rpos (var) ${n}`);
 	if (n < 0)
 	    uerror(`rpos function ${this.func} returned ${n}`);
@@ -2724,7 +2728,7 @@ class PE_RPos_Var extends VarPE { // pos(var)
     }
 
     match(m) {
-	let n = parseInt(this.v.get()); // XXX .get_int()?
+	let n = this.v.get_int();
 	m.petrace(this, `matching pos (var) ${n}`);
 	if (n < 0)
 	    uerror(`pos function ${this.func} returned ${n}`);
@@ -2793,7 +2797,7 @@ class PE_RTab_Var extends VarPE { // rtab(var)
     }
 
     match(m) {
-	let n = parseInt(this.v.get()); // XXX .get_int()?
+	let n = this.v.get_int();
 	m.petrace(this, `matching rtab (var) ${n}`);
 	if (n < 0)
 	    need_nni_var('rtab', n, this.v);
@@ -2990,7 +2994,7 @@ class PE_Tab_Var extends VarPE { // tab(var)
     }
 
     match(m) {
-	let n = parseInt(this.v.get()); // XXX .get_int()?
+	let n = this.v.get_int();
 	m.petrace(this, `matching tab (var) ${n}`);
 	if (n < 0)
 	    need_nni_func('tab', n, this.v);

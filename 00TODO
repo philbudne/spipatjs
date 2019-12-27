@@ -6,14 +6,13 @@ figure out node.js/browser compatible module format!
 XXX document Var class in README.md
 
 Accept non-bool returns as truthy in PE_Func??  Only reject undefined??
-'null' pattern variable?? PE_Null??
 cache ref_array in Pattern.ra?
 transfer more PE documentation to spipat.js
 make print_{nodes,dot} Pattern methods??
-StackVar class?? only allow .set()?
-StrVar vs IntVar?? or .getstr() vs .getint()???
-top level and/or functions??
-Accept undefined Var values as zero for (R)(Pos|Tab)|Len?? getint() method??
+Vars:
+	StackVar class?? only allow .set()?
+	StrVar vs IntVar?? or .getstr() vs .getint()???
+	Accept undefined Var values as zero? getint() method??
 reuse C++ tests!!!
 indicate stack frame type in Stack_Entry?
 reimplement stack using growable Array (push)
