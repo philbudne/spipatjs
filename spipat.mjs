@@ -3071,5 +3071,13 @@ export function onmatch(p, arg) {
 }
 
 ////////////////////////////////////////////////////////////////
+// non-pattern functions
+
+export function reverse(str) {
+    return Array.from(str).reverse().join('');
+}
+
+
+////////////////////////////////////////////////////////////////
 
 //console.log(STRING_LENGTHS);
