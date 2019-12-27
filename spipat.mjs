@@ -1368,7 +1368,7 @@ export class Var {
     }
 
     toString() {
-	return `new Var(${stringify(this.name)})`;
+	return `_var(${stringify(this.name)})`;
     }
 
     get_int() {
