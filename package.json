@@ -4,5 +4,6 @@
     "description" : "SNOBOL/SPITBOL pattern matching",
     "keywords" : [ "SNOBOL", "SPITBOL", "pattern"],
     "license" : "GPL-3.0",
-    "homepage": "https://github.com/philbudne/spipatjs"
+    "homepage": "https://github.com/philbudne/spipatjs",
+    "type": "module"
 }
