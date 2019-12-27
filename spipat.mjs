@@ -179,8 +179,8 @@ class _PE {			// Pattern Element
 	// want (const) class members:
 	this.ok_for_simple_arbno = ok_for_simple_arbno;
 	this.has_alt = has_alt;
-	this.no_and = false;
-	this.need_pat = false;
+	this.assign = false;	// imm/onmatch wrappers
+	this.need_pat = false;	// image needs pat(x)
     }
 
     // methods for image (conversion to string):
@@ -192,7 +192,7 @@ class _PE {			// Pattern Element
 	return null;
     }
 
-    inext() {			// return subsequent pattern (for image)
+    inext(ic) {			// return subsequent pattern (for image)
 	return this.pthen;
     }
 
@@ -342,7 +342,7 @@ class PE extends UnsealedPE {
 class VarPE extends UnsealedPE {
     constructor(index, v, ok_for_simple_arbno) {
 	super(index, EOP, ok_for_simple_arbno);
-	this.no_and = true;	// want class member
+	this.assign = true;	// want class member
 	this.v = v;
 	this.seal();
     }
@@ -668,7 +668,7 @@ const CP_Assign = new PE_Assign();
 class PE_R_Enter extends PE {
     constructor() {
 	super();
-	this.no_and = true;
+	this.assign = true;
     }
 
     match(m) {
@@ -679,6 +679,12 @@ class PE_R_Enter extends PE {
     }
 
     image(ic) {
+	const action = ic.refs[this.index-2];
+	action.image(ic); // Imm/OnMatch node
+    }
+
+    inext(ic) {
+	return ic.refs[this.index-2].pthen; // pick up after Imm/OnMatch
     }
 }
 
@@ -1068,45 +1074,35 @@ class ImageContext {
 
 	// collect list of elements
 	let elts = [];
-	for(let e1 = e; e1 !== succ && e1 !== EOP; e1 = e1.inext())
+	for(let e1 = e; e1 !== succ && e1 !== EOP; e1 = e1.inext(this))
 	    elts.push(e1);
 
 	if (DEBUG_IMAGE) console.log("sequence", elts.map((x) => x.index));
 
-	// allow bare string if one element pattern inside function/method args
-	// (allow nudity when alone indoors)
-	if (bare_ok && elts.length == 1 && elts[0].need_pat) {
-	    this.first = false;	// lie!!
-	    elts[0].image(this);
+	if (elts.length == 1) {
+	    if (bare_ok && elts[0].need_pat) {
+		this.first = false;
+		elts[0].image(this);
+	    }
+	    else {
+		this.first = true;
+		elts[0].image(this);
+	    }
 	    return;
 	}
-
-	this.first = true;
+	this.append('and(');
+	this.first = false;
 	let n = 0;
-	let open_and = false;
 	for (let e1 of elts) {
-	    if (e1.no_and) {	// wrappers (imm/onmatch)
-		if (open_and)
-		    this.append(')');
-		open_and = false;
-		n = 0;
-	    }
-	    else if (n > 0) {
-		if (!open_and) {
-		    this.append(".and(");
-		    open_and = true;
-		}
-		else
-		    this.append(", ");
-	    }
+	    if (n > 0)
+		this.append(", ");
 	    let lenb4 = this.result.length;
 	    e1.image(this);
 	    // don't count elements (eg; R_Enter) that are invisible
 	    if (this.result.length > lenb4)
 		n++;
 	}
-	if (open_and)
-	    this.append(')');	// end ".and("
+	this.append(')');	// end "and("
     } // sequence
 
 } // ImageContext
@@ -1393,7 +1389,7 @@ class PE_Alt extends AltPE {
 	return M_Continue;
     }
 
-    inext() {
+    inext(ic) {
         // Number of elements in left pattern of alternation
 	const elmts_in_l = this.pthen.index - this.alt.index;
 
@@ -1413,18 +1409,17 @@ class PE_Alt extends AltPE {
     }
 
     image(ic) {
-	let er = this.inext();
+	let er = this.inext(ic);
 
-	ic.sequence(this.pthen, er, false); // no bare strings!
-	ic.append(".or(");
+	ic.append("or(");
+	ic.sequence(this.pthen, er, true); // allow bare strings
 	let e1 = this;
 	let n = 0;
 	//console.log('---- alt.image');
 	for (;;) {
 	    e1 = e1.alt;
 	    //console.log("e1", e1.index, e1.constructor.name, "then", e1.pthen.index, e1.pthen.constructor.name);
-	    if (++n > 1)
-		ic.append(", ");
+	    ic.append(", ");
 	    if (e1 instanceof PE_Alt) {
 		ic.sequence(e1.pthen, er, true); // allow bare strings
 	    }
@@ -1866,10 +1861,23 @@ export function arbno(p) {
 
 //////////////// assign immediate
 
+// no mixins (MI), so need a function
+// would prefer "pattern.imm/onmatch(data)", but it's hard!
+function image_match(e, ic) {
+    // assert(!first)?
+
+    //ic.append(`.${e.name()}(${e.data()})`);
+
+    const p = ic.refs[e.index-2];
+    ic.append(`${e.name()}(`);
+    ic.sequence(p, e, true);
+    ic.append(`, ${e.data()})`);
+}
+
 class PE_Call_Imm extends FuncPE {
     constructor(func) {		// XXX Func1PE?
 	super(1, func);
-	this.no_and = true;	// want class member
+	this.assign = true;	// want class member
     }
 
     match(m) {
@@ -1881,9 +1889,12 @@ class PE_Call_Imm extends FuncPE {
 	return M_Succeed;
     }
 
+    name() {
+	return 'imm';
+    }
+
     image(ic) {
-	// assert(!first)?
-	ic.append(`.imm(${this.data()})`); // function name or defn
+	image_match(this, ic);
     }
 }
 
@@ -1902,23 +1913,26 @@ class PE_Var_Imm extends VarPE {
 	return M_Succeed;
     }
 
+    name() {
+	return 'imm';
+    }
+
     image(ic) {
-	// assert(!first)?
-	ic.append(`.imm(${this.data()})`);
+	image_match(this, ic);
     }
 }
 
-//////////////// call on match
+//////////////// call/var on match
 
 // This node sets up for the eventual assignment
 class PE_Call_OnM extends FuncPE {
     constructor(func) {
 	super(1, func);		// XXX Func1PE?
-	this.no_and = true;	// want class member
+	this.assign = true;	// want class member
     }
 
     match(m) {
-	m.petrace(this, "registering deferred call");
+	m.petrace(this, "  registering deferred call");
 	m.stack.put_node(m.stack.base - 1, m.node);
 	m.push(CP_Assign);
 	m.pop_region();
@@ -1931,9 +1945,12 @@ class PE_Call_OnM extends FuncPE {
 	this.func(str);
     }
 
+    name() {
+	return 'onmatch';
+    }
+
     image(ic) {
-	// assert(!first)?
-	ic.append(`.onmatch(${this.data()})`); // function name or defn
+	image_match(this, ic);
     }
 }
 
@@ -1953,12 +1970,16 @@ class PE_Var_OnM extends VarPE {
     }	
 
     onmatch(m, str) {
+	// XXX register by name in m.vars object?
 	this.v.set(str);
     }
 
+    name() {
+	return 'onmatch';
+    }
+
     image(ic) {
-	// assert(!first)?
-	ic.append(`.onmatch(${this.data()})`);
+	image_match(this, ic);
     }
 }
 
@@ -2093,8 +2114,8 @@ class PE_BreakX_Set extends SetPE { // breakx (character set case)
 	return "breakx";
     }
 
-    inext() {
-	return super.inext().pthen; // skip PE_Alt
+    inext(ic) {
+	return super.inext(ic).pthen; // skip PE_Alt
     }
 }
 
@@ -2117,8 +2138,8 @@ class PE_BreakX_Var extends VarPE { // breakx (var case)
 	return "breakx";
     }
 
-    inext() {
-	return super.inext().pthen; // skip PE_Alt
+    inext(ic) {
+	return super.inext(ic).pthen; // skip PE_Alt
     }
 }
 
