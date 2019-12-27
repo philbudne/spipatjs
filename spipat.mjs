@@ -1877,6 +1877,28 @@ export function arbno(p) {
     return new Pattern(p.stk + 3, x);
 } // arbno
 
+//////////////// call function (for side effect only)
+
+class PE_Call extends FuncPE {
+    constructor(func) {		     // XXX Func1PE?
+	super(1, func);
+    }
+
+    match(m) {
+	m.petrace(this, `calling function ${this.data()}`);
+	this.func();
+	return M_Succeed;
+    }
+
+    image(ic) {
+	ic.pappend(`call(${this.data()})`); // function name or defn
+    }
+} // PE_Call
+
+export function call(func) {
+    return new Pattern(0, new PE_Call(func));
+}
+
 //////////////// assign immediate
 
 // no mixins (MI), so need a function
