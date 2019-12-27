@@ -1510,7 +1510,7 @@ class PE_Any_Var extends VarPE {
 	const str = this.v.get();
 	if (!is_str(str))
 	    need_s('any', str, this.v);
-	m.petrace(this, `matching any ${LQ}${str}${RQ}`);
+	m.petrace(this, `matching any (var) ${LQ}${str}${RQ}`);
 	const cs = cset(str);
 	if (m.cursor < m.length && cs.has(m.subject[m.cursor])) {
 	    m.cursor++;
@@ -1531,8 +1531,8 @@ class PE_Any_Func extends FuncPE {
     }
 
     match(m) {
-	m.petrace(this, "matching any (func)"); // XXX
 	let cs = this.func();
+	m.petrace(this, "matching any (func) ${LQ}${cs}${RQ}");
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
@@ -2060,7 +2060,7 @@ class PE_Break_Var extends VarPE {
 	const str = this.v.get();
 	if (!is_str(str))
 	    need_s('breakp', str, this.v);
-	m.petrace(this, `matching break ${LQ}${str}${RQ}`);
+	m.petrace(this, `matching break (var) ${LQ}${str}${RQ}`);
 	const cs = cset(str);
 	while (m.cursor < m.length && !cs.has(m.subject[m.cursor])) {
 	    m.cursor++;
@@ -2079,8 +2079,8 @@ class PE_Break_Func extends FuncPE {
     }
 
     match(m) {
-	m.petrace(this, "matching break (func)"); // XXX
 	let cs = this.func();
+	m.petrace(this, `matching break (func) ${LQ}${str}${RQ}`);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
@@ -2138,7 +2138,7 @@ class PE_BreakX_Var extends VarPE { // breakx(var)
 	const str = this.v.get();
 	if (!is_str(str))
 	    need_s('breakx', str, this.v);
-	m.petrace(this, `matching breakx ${LQ}${str}${RQ}`);
+	m.petrace(this, `matching breakx (var) ${LQ}${str}${RQ}`);
 	const cs = cset(str);
 	while (m.cursor < m.length) {
 	    if (cs.has(m.subject[m.cursor]))
@@ -2160,13 +2160,10 @@ class PE_BreakX_Var extends VarPE { // breakx(var)
 class PE_BreakX_Func extends FuncPE { // breakx (function case)
     match(m) {
 	let cs = this.func();
-	if (is_str(cs)) {
-	    m.petrace(this, `matching breakx ${LQ}${cs}${RQ}`);
+	m.petrace(this, `matching breakx (func) ${LQ}${cs}${RQ}`);
+	if (is_str(cs))
 	    cs = cset(cs)
-	}
-	else if (is_set(cs))
-	    m.petrace(this, `matching breakx ${LQ}${cs}${RQ}`); // XXX
-	else
+	else if (!is_set(cs))
 	    need_sf('breakx', cs, this.func);
 
 	while (m.cursor < m.length) {
@@ -2488,7 +2485,7 @@ class PE_NotAny_Var extends VarPE {
 	const str = this.v.get();
 	if (!is_str(str))
 	    need_s('notany', str, this.v);
-	m.petrace(this, `matching notany ${LQ}${str}${RQ}`);
+	m.petrace(this, `matching notany (var) ${LQ}${str}${RQ}`);
 	const cs = cset(str);
 	if (m.cursor < m.length && !cs.has(m.subject[m.cursor])) {
 	    m.cursor++;
@@ -2510,12 +2507,12 @@ class PE_NotAny_Func extends FuncPE {
 
     match(m) {
 	let cs = this.func();
+	m.petrace(this, `matching notany (func) ${LQ}${cs}${RQ}`);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
 	    need_sf('notany', cs, this.func);
 
-	m.petrace(this, "matching notany (func)"); // XXX
 	if (m.cursor < m.length && !cs.has(m.subject[m.cursor])) {
 	    m.cursor++;
 	    return M_Succeed;
@@ -2571,7 +2568,7 @@ class PE_NSpan_Var extends VarPE {
 	const str = this.v.get();
 	if (!is_str(str))
 	    need_s('nspan', str, this.v);
-	m.petrace(this, `matching nspan ${LQ}${str}${RQ}`);
+	m.petrace(this, `matching nspan (var) ${LQ}${str}${RQ}`);
 	const cs = cset(str);
 	while (m.cursor < m.length && cs.has(m.subject[m.cursor])) {
 	    m.cursor++;
@@ -2590,8 +2587,8 @@ class PE_NSpan_Func extends FuncPE {
     }
 
     match(m) {
-	m.petrace(this, "matching nspan (func)"); // XXX
 	let cs = this.func();
+	m.petrace(this, `matching nspan (func) ${LQ}${cs}${RQ}`);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
@@ -2870,7 +2867,7 @@ class PE_Span_Var extends VarPE {
 
     match(m) {
 	const str = this.v.get();
-	m.petrace(this, "matching span (var)"); // XXX
+	m.petrace(this, "matching span (var) ${LQ}${str}${RQ}");
 	if (!is_str(str))
 	    need_s('span', str, this.v);
 	const cs = cset(str);
@@ -2897,13 +2894,13 @@ class PE_Span_Func extends FuncPE {
 
     match(m) {
 	let cs = this.func();
+	m.petrace(this, `matching span (func) ${LQ}${cs}${RQ}`);
 	if (is_str(cs))
 	    cs = cset(cs)
 	else if (!is_set(cs))
 	    need_sf('span', cs, this.func);
 
 	let c = m.cursor;
-	m.petrace(this, "matching span (func)"); // XXX
 	while (c < m.length && set.has(m.subject[c]))
 	    c++;
 	if (m.cursor !== c) {	// non-empty match?
