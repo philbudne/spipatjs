@@ -44,11 +44,11 @@
 const DEBUG_STACK = false;
 const DEBUG_IMAGE = false;
 const TEST_IMAGE = false;
-const PARANOIA = true;
+const PARANOIA = true;		// stack sanity checks
 
 // uni-chars for display of strings:
-export const LQ = '«';	// string left quote
-export const RQ = '»';	// string right quote
+export const LQ = '«';		// string left quote
+export const RQ = '»';		// string right quote
 const CURSOR = '❱';		// display before cursor location
 const EOP_INDEX = 0;
 const EOP_SYMBOL = '∎';		// "end of proof" (QED)
@@ -1316,7 +1316,10 @@ class Stack {
 
     set_base(n) {
 	if (DEBUG_STACK) console.log(`stack.set_base ${n}`);
-	if (PARANOIA && !is_int(n)) error('bad base');
+	if (PARANOIA) {
+	    if (!is_int(n)) error(`bad base: ${n}`);
+	    if (n < -this.size || n > -1) error(`bad base: ${n}`)
+	}
 	this.base = n;
     }
 }
