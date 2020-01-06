@@ -9,6 +9,17 @@ larger prefixes.
 
 Tested with nodejs v13.5.0
 
+NOTE!!
+
+In the following "Unicode character" means a JavaScript
+string representing a single Unicode code points, which may contain
+either one, or two UTF-16 16-bit code units (ie; a surrogate pair,
+as is the case for all emoji!)
+
+Position values in .start and .stop, values passed/stored by the
+cursor function, and values accepted by pos, rpos, tab and rtab refer
+to one-based positions within the subject string.
+
 ## Primative Patterns
 
 The following primative Patterns are available as const variables:
@@ -66,17 +77,6 @@ of the special pattern elements that have side effects.
 
 ## Pattern contruction functions
 
-### pat(SFV)
-
-Takes a String to match, a Var object, or a function that returns a
-string or pattern (to match) or a boolean (which, if true matches the
-null string, and if false fails) and returns a Pattern.
-
-### cset(S)
-
-Takes a String and returns a Set representing the Unicode
-characters in the string.
-
 ### and(....)
 
 Takes any number of Pattern, String, Var, or Function arguments and
@@ -119,10 +119,15 @@ breakp(SSVF) when it first matches, but if a string is successfully
 matched, then a subsequent failure causes an attempt to extend the
 matched string.
 
+### call(F)
+
+Takes a function to call (with no arguments) for side-effect only;
+Any return value is ignored. Equivalent to `pat('').imm(F)`
+
 ### cursor(VF)
 
 Sets Var or calls Function with a one-based integer cursor position,
-defined as the count of characters that have been matched so far
+defined as the count of Unicode characters that have been matched so far
 (including any start point moves).
 
 ### fencef(P)
@@ -138,8 +143,8 @@ alternation and concatenation.
 ### len(NF)
 
 Where N is a positive integer (or Function returning one), matches the
-given number of characters. For example, Len(10) matches any string
-that is exactly ten characters long.
+given number of Unicode characters. For example, Len(10) matches any
+string that is exactly ten characters long.
 
 ### notany(SSVF)
 
@@ -159,21 +164,28 @@ can match the null string.
 Takes any number of Pattern, String, Var, or Function arguments and
 returns a Pattern which attempts to match each in turn.
 
+### pat(SFV)
+
+Takes a String to match, a Var object, or a function that returns a
+string or pattern (to match) or a boolean (which, if true matches the
+null string, and if false fails) and returns a Pattern.
+
 ### pos(NF)
 
 Where NF is a positive integer (or Function), matches the null string
-if exactly N characters have been matched so far, and otherwise fails.
+if exactly N Unicode characters have been matched so far, and
+otherwise fails.
 
 ### rpos(NF)
 
 Where NF is a positive integer (or Function yadda yadda), matches the null
-string matches the null string if exactly N characters remain to be
+string matches the null string if exactly N Unicode characters remain to be
 matched, and otherwise fails.
 
 
 ### rtab(NF)
 
-Where NF is a positive integer (or Function), matches
+Where NF is a positive integer (or Function...), matches Unicode
 characters from the current position until exactly N characters remain
 to be matched in the string. Fails if fewer than N unmatched
 characters remain in the string.
@@ -181,16 +193,16 @@ characters remain in the string.
 ### tab(NF)
 
 Where NF is a positive integer (or Function), matches from
-the current position until exactly N characters have
+the current position until exactly N Unicode characters have
 been matched in all. Fails if more than N characters
 have already been matched.
 
 ### span(SSVF)
 
 Where SSF is a String, Set, Var, or Function, matches a string of one
-or more characters that is among the characters given.  Always matches
-the longest possible such string.  Fails if the current character is
-not one of the given set of characters.
+or more characters that are among the characters given.  Always
+matches the longest possible such string.  Fails if the current
+character is not one of the given set of characters.
 
 ## `and` and `or` functions
 
@@ -249,16 +261,16 @@ The String matched by the Pattern.
 
 #### start
 
-The number of characters before the matched string
+The (one-based) index of the first matched Unicode character in subject.
 
 #### stop
 
-The total number of characters from the start
-of the SUBJECT string to the end of the match.
+The (one-based) index of the last matched Unicode character in subject.
 
 #### subject
 
-Array of Unicode characters.
+Array of Unicode characters for the SUBJECT string supplied to
+Pattern.amatch or Pattern.umatch.
 
 ### Match object methods
 
@@ -266,6 +278,24 @@ Array of Unicode characters.
 
 Returns the SUBJECT String with the matched
 string replaced by the REPL String.
+
+#### slice(START,END)
+
+Returns a substring of the SUBJECT string, based on cursor
+units (one-based, counting the number of Unicode characters
+in the string)
+
+## Other Functions
+
+### cset(S)
+
+Takes a String and returns a Set representing the Unicode
+characters in the string.
+
+### reverse(S)
+
+Takes a strings and returns a string with the Unicode characters
+in reverse order.
 
 ## Recursive Patterns
 
