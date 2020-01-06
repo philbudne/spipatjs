@@ -1,18 +1,25 @@
 TODO:
 
+top level substr function?
+	use explode & slice? (& in Match.slice?)
+
+top level 'const DEBUG'
+	top level trace functions, avoid ``
+
 figure out node.js/browser compatible module format!
 	use Babel??? typescript??
 
-XXX document Var class, call(func), reverse(str) in README.md
+XXX document in README.md:
+	Var class
+
+top level "replaceall" function? Pattern.replaceall??
 
 Accept non-bool returns as truthy in PE_Func??  Only reject undefined??
 cache ref_array in Pattern.ra?
 transfer more PE documentation to spipat.js
 make print_{nodes,dot} Pattern methods??
-Vars:
-	StackVar class?? only allow .set()?
-	StrVar vs IntVar?? or .getstr() vs .getint()???
-	Accept undefined Var values as zero? getint() method??
+StackVar class?? only allow .set()?
+
 reuse C++ tests!!!
 indicate stack frame type in Stack_Entry?
 reimplement stack using growable Array (push)
