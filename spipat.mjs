@@ -559,7 +559,8 @@ class PE_Func extends FuncPE {
     match(m) {
 	let x = this.func();
 	if (is_str(x)) {
-	    m.petrace(this, `function ${this.data()} matching ${LQ}${x}${RQ}`);
+	    if (m.debug)
+		m.petrace(this, `function ${this.data()} matching ${LQ}${x}${RQ}`);
 	    let runes = explode(x);
 	    let length = runes.length;
 	    if ((m.length - m.cursor) >= length) {
@@ -574,7 +575,8 @@ class PE_Func extends FuncPE {
 	    return M_Fail;
 	}
 	else if (is_pat(x)) {
-	    m.petrace(this, `function ${this.data()} starting recursive match`);
+	    if (m.debug)
+		m.petrace(this, `function ${this.data()} starting recursive match`);
 	    if (!m.stack.room(x.stk))
 		error("pattern stack overflow");
 	    m.stack.put_node(m.stack.ptr + 1, this.pthen);
@@ -583,7 +585,8 @@ class PE_Func extends FuncPE {
 	    return M_Continue;
 	}
 	else if (is_bool(x) || is_int(x)) {
-	    m.petrace(this, `function ${this.data()} returned ${x}`);
+	    if (m.debug)
+		m.petrace(this, `function ${this.data()} returned ${x}`);
 	    if (x)
 		return M_Succeed;
 	    else
@@ -932,11 +935,12 @@ class Match {
 	return before + repl + after;
     }
 
-    // Internal:
 
     slice(start, stop) {
 	return this.subject.slice(start-1, stop).join('');
     }
+
+    // Internal:
 
     trace_match(n) {		// overridden in DMatch
     }
@@ -1562,7 +1566,7 @@ export function any(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_Any_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_Any_Set(x));
+	return new Pattern(1, new PE_Any_Set(new Set(x)));
     else if (is_var(x))
 	return new Pattern(1, new PE_Any_Var(x));
     else if (is_func(x))
@@ -1888,7 +1892,8 @@ class PE_Call extends FuncPE {
     }
 
     match(m) {
-	m.petrace(this, `calling function ${this.data()}`);
+	if (m.debug)
+	    m.petrace(this, `calling function ${this.data()}`);
 	this.func();
 	return M_Succeed;
     }
@@ -2131,7 +2136,7 @@ export function breakp(x) {	// Break Pattern
     if (is_str(x))
 	return new Pattern(1, new PE_Break_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_Break_Set(x));
+	return new Pattern(1, new PE_Break_Set(new Set(x)));
     else if (is_var(x))
 	return new Pattern(1, new PE_Break_Var(x));
     else if (is_func(x))
@@ -2238,7 +2243,7 @@ export function breakx(arg) { // Breakx Pattern
     if (is_str(arg))
 	b = new PE_BreakX_Set(3, cset(arg));
     else if (is_set(arg))
-	b = new PE_BreakX_Set(3, arg);
+	b = new PE_BreakX_Set(3, new Set(arg));
     else if (is_var(x))
 	b = new PE_BreakX_Var(3, arg);
     else if (is_func(arg))
@@ -2559,7 +2564,7 @@ export function notany(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_NotAny_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_NotAny_Set(x));
+	return new Pattern(1, new PE_NotAny_Set(new Set(x)));
     else if (is_var(x))
 	return new Pattern(1, new PE_NotAny_Var(x));
     else if (is_func(x))
@@ -2638,7 +2643,7 @@ export function nspan(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_NSpan_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_NSpan_Set(x));
+	return new Pattern(1, new PE_NSpan_Set(new Set(x)));
     else if (is_var(x))
 	return new Pattern(1, new PE_NSpan_Var(x));
     else if (is_func(x))
@@ -2949,7 +2954,7 @@ export function span(x) {
     if (is_str(x))
 	return new Pattern(1, new PE_Span_Set(cset(x)));
     else if (is_set(x))
-	return new Pattern(1, new PE_Span_Set(x));
+	return new Pattern(1, new PE_Span_Set(new Set(x)));
     else if (is_var(x))
 	return new Pattern(1, new PE_Span_Var(x));
     else if (is_func(x))
