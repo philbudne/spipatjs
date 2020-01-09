@@ -12,13 +12,12 @@ Tested with nodejs v13.5.0
 NOTE!!
 
 In the following "Unicode character" means a JavaScript
-string representing a single Unicode code points, which may contain
+string representing a single Unicode code point, which may contain
 either one, or two UTF-16 16-bit code units (ie; a surrogate pair,
 as is the case for all emoji!)
 
 Position values in .start and .stop, values passed/stored by the
-cursor function, and values accepted by pos, rpos, tab and rtab refer
-to one-based positions within the subject string.
+cursor function to one-based positions within the subject string.
 
 ## Primative Patterns
 
