@@ -49,7 +49,7 @@ const PARANOIA = true;		// stack sanity checks
 // uni-chars for display of strings:
 export const LQ = '«';		// string left quote
 export const RQ = '»';		// string right quote
-const CURSOR = '❱';		// display before cursor location
+const CURSOR = '⯈';		// display before cursor location
 const EOP_INDEX = 0;
 const EOP_SYMBOL = '∎';		// "end of proof" (QED)
 
