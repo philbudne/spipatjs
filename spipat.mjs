@@ -257,13 +257,12 @@ class _PE {			// Pattern Element
     } // copy
 
     clone() {			// clone this element, for copy()
-	let copy = Object.assign({}, this);
-
-	// is this REALLY the best/right way?
-	// do we need to make a copy of the prototype?????
-	copy.__proto__ = Object.assign(Object.create(Object.getPrototypeOf(this)),
-				       this);
-	return copy;
+	// from https://stackoverflow.com/questions/41474986/how-to-clone-a-javascript-es6-class-instance
+	// NOTE: works for symbols but not:
+	//	accessor properties (get/set)
+	//	non-enumerable properties (including static methods?)
+	return Object.assign(Object.create(Object.getPrototypeOf(this)),
+			     this);
     }
 
     // Note: this procedure is not used by the normal concatenation circuit,
